@@ -1,0 +1,96 @@
+@model ward.Models.Inventory.TransferStockViewModel
+@{
+    ViewData["Title"] = "Inter-Warehouse Stock Transfer";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h4 class="mb-0 fw-bold text-primary">⇄ Inter-Warehouse Stock Transfer</h4>
+                <a asp-action="Index" class="btn btn-sm btn-outline-secondary">Cancel</a>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="Transfer" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="IdempotencyToken" />
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="ProductId" class="form-label fw-semibold">Product / Flower *</label>
+                        <select asp-for="ProductId" class="form-select" asp-items="ViewBag.Products" id="transferProductSelect" autofocus>
+                            <option value="">-- Select Product --</option>
+                        </select>
+                        <span asp-validation-for="ProductId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="SourceWarehouseId" class="form-label fw-semibold">Source Warehouse (From) *</label>
+                            <select asp-for="SourceWarehouseId" class="form-select" asp-items="ViewBag.Warehouses" id="sourceWarehouseSelect">
+                                <option value="">-- Select Source --</option>
+                            </select>
+                            <span asp-validation-for="SourceWarehouseId" class="text-danger small"></span>
+                            <div id="sourceStockHint" class="form-text text-muted"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="DestinationWarehouseId" class="form-label fw-semibold">Destination Warehouse (To) *</label>
+                            <select asp-for="DestinationWarehouseId" class="form-select" asp-items="ViewBag.Warehouses">
+                                <option value="">-- Select Destination --</option>
+                            </select>
+                            <span asp-validation-for="DestinationWarehouseId" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Quantity" class="form-label fw-semibold">Transfer Quantity *</label>
+                        <input asp-for="Quantity" class="form-control font-monospace" type="number" step="any" min="0.0001" placeholder="e.g. 50" />
+                        <span asp-validation-for="Quantity" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Notes" class="form-label fw-semibold">Transfer Notes / Reason</label>
+                        <textarea asp-for="Notes" class="form-control" rows="2" placeholder="e.g. Replenishing retail shop floor from cold storage cooler"></textarea>
+                        <span asp-validation-for="Notes" class="text-danger small"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a asp-action="Index" class="btn btn-outline-secondary">Back to Stock</a>
+                        <button type="submit" class="btn btn-primary px-4">Execute Atomic Transfer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const prodSelect = document.getElementById('transferProductSelect');
+        const sourceSelect = document.getElementById('sourceWarehouseSelect');
+        const hint = document.getElementById('sourceStockHint');
+
+        async function updateAvailableStock() {
+            const pId = prodSelect.value;
+            const wId = sourceSelect.value;
+            if (pId && wId) {
+                try {
+                    const resp = await fetch(`/Inventory/GetProductStock?productId=${pId}&warehouseId=${wId}`);
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        hint.innerHTML = `<span class="fw-bold text-primary">Available at source: ${data.available}</span>`;
+                    }
+                } catch (e) {
+                    hint.innerText = '';
+                }
+            } else {
+                hint.innerText = '';
+            }
+        }
+
+        prodSelect?.addEventListener('change', updateAvailableStock);
+        sourceSelect?.addEventListener('change', updateAvailableStock);
+        updateAvailableStock();
+    </script>
+}

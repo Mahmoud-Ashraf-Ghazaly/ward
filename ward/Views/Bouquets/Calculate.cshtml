@@ -1,0 +1,256 @@
+@model ward.Models.Production.RecipeCalculationResultDto
+
+@{
+    ViewData["Title"] = $"Requirements Calculator: {Model.BouquetProductName}";
+    var warehouses = ViewBag.Warehouses as List<ward.Entities.Inventory.Warehouse> ?? new List<ward.Entities.Inventory.Warehouse>();
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-11">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2 text-primary fw-bold mb-1">
+                    <i class="bi bi-calculator me-2"></i>Component Requirements & Cost Calculator
+                </h1>
+                <p class="text-muted mb-0">Calculate total flower stems, wrapping materials, ribbons, labor, and warehouse availability for requested quantities.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a asp-action="Index" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Recipes
+                </a>
+                <a asp-action="Assemble" asp-route-bouquetProductId="@Model.BouquetProductId" class="btn btn-success shadow-sm">
+                    <i class="bi bi-box-seam me-1"></i> Proceed to Assembly
+                </a>
+            </div>
+        </div>
+
+        <!-- Quantity Control Card -->
+        <div class="card shadow-sm border-0 mb-4 bg-light">
+            <div class="card-body p-4">
+                <form method="get" asp-action="Calculate" id="calcForm" class="row g-3 align-items-center">
+                    <input type="hidden" name="bouquetProductId" value="@Model.BouquetProductId" />
+
+                    <div class="col-md-5">
+                        <label class="form-label fw-bold text-dark mb-1">Bouquet Product</label>
+                        <div class="h4 fw-bold text-primary mb-0">@Model.BouquetProductName</div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="quantityInput" class="form-label fw-bold text-dark mb-1">Requested Bouquet Quantity</label>
+                        <div class="input-group">
+                            <input type="number" id="quantityInput" name="quantity" value="@Model.RequestedBouquetQuantity.ToString("G29")" min="0.01" step="any" class="form-control form-control-lg fw-bold text-center" required />
+                            <button type="submit" class="btn btn-primary px-3">
+                                <i class="bi bi-arrow-repeat me-1"></i> Recalculate
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold text-dark mb-1">Quick Presets</label>
+                        <div class="btn-group w-100" role="group">
+                            <a asp-action="Calculate" asp-route-bouquetProductId="@Model.BouquetProductId" asp-route-quantity="1" class="btn btn-outline-secondary @(Model.RequestedBouquetQuantity == 1 ? "active" : "")">1x</a>
+                            <a asp-action="Calculate" asp-route-bouquetProductId="@Model.BouquetProductId" asp-route-quantity="2" class="btn btn-outline-secondary @(Model.RequestedBouquetQuantity == 2 ? "active" : "")">2x</a>
+                            <a asp-action="Calculate" asp-route-bouquetProductId="@Model.BouquetProductId" asp-route-quantity="5" class="btn btn-outline-secondary @(Model.RequestedBouquetQuantity == 5 ? "active" : "")">5x</a>
+                            <a asp-action="Calculate" asp-route-bouquetProductId="@Model.BouquetProductId" asp-route-quantity="10" class="btn btn-outline-secondary @(Model.RequestedBouquetQuantity == 10 ? "active" : "")">10x</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Requirements Breakdown Table -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0 fw-semibold">
+                    Component Requirements for @Model.RequestedBouquetQuantity.ToString("G29") Bouquet(s)
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Component</th>
+                                <th>SKU</th>
+                                <th class="text-center">Per Unit</th>
+                                <th class="text-center">Waste Margin</th>
+                                <th class="text-center">Effective / Unit</th>
+                                <th class="text-center text-primary fw-bold">Total Required</th>
+                                <th class="text-end">Unit Cost</th>
+                                <th class="text-end">Line Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var comp in Model.Components)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold text-dark">@comp.ProductName</div>
+                                    </td>
+                                    <td><code class="text-secondary fw-semibold">@comp.SKU</code></td>
+                                    <td class="text-center">@comp.QuantityPerBouquet.ToString("G29") @comp.UnitSymbol</td>
+                                    <td class="text-center">
+                                        @if (comp.WasteMarginPercentage > 0)
+                                        {
+                                            <span class="badge bg-warning text-dark">+@comp.WasteMarginPercentage.ToString("F1")%</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">0%</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">@comp.EffectiveQuantityPerBouquet.ToString("G29") @comp.UnitSymbol</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary fs-6 px-3 py-2">
+                                            @comp.TotalQuantityRequired.ToString("G29") @comp.UnitSymbol
+                                        </span>
+                                    </td>
+                                    <td class="text-end text-muted">$@comp.UnitCost.ToString("F2")</td>
+                                    <td class="text-end fw-bold text-dark">$@comp.TotalComponentCost.ToString("F2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-light py-3">
+                <div class="row g-3 text-center text-md-end align-items-center">
+                    <div class="col-md-3">
+                        <span class="text-muted small d-block">Components Cost:</span>
+                        <span class="fw-bold fs-5 text-dark">$@Model.TotalComponentsCost.ToString("F2")</span>
+                        <small class="text-muted d-block">($@Model.UnitComponentsCost.ToString("F2") / unit)</small>
+                    </div>
+                    <div class="col-md-3">
+                        <span class="text-muted small d-block">Labor Total:</span>
+                        <span class="fw-bold fs-5 text-dark">$@Model.TotalLaborCost.ToString("F2")</span>
+                        <small class="text-muted d-block">($@Model.UnitLaborCost.ToString("F2") / unit)</small>
+                    </div>
+                    <div class="col-md-3">
+                        <span class="text-muted small d-block">Packaging Total:</span>
+                        <span class="fw-bold fs-5 text-dark">$@Model.TotalPackagingCost.ToString("F2")</span>
+                        <small class="text-muted d-block">($@Model.UnitPackagingCost.ToString("F2") / unit)</small>
+                    </div>
+                    <div class="col-md-3">
+                        <span class="text-muted small d-block">Total Estimated Cost:</span>
+                        <span class="h3 fw-bold text-primary mb-0 d-block">$@Model.TotalEstimatedCost.ToString("F2")</span>
+                        <small class="text-muted d-block">($@Model.EstimatedUnitCost.ToString("F2") / unit)</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Warehouse Stock Availability Checker -->
+        <div class="card shadow-sm border-0 mb-5">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="card-title mb-0 fw-semibold">
+                        <i class="bi bi-building-check me-2"></i>Warehouse Availability Check
+                    </h5>
+                    <small class="text-muted">Validate component stock availability by specific warehouse location.</small>
+                </div>
+                <div class="d-flex align-items-center gap-2" style="max-width: 350px;">
+                    <select id="warehouseSelect" class="form-select">
+                        <option value="">-- Choose Warehouse to Check --</option>
+                        @foreach (var wh in warehouses)
+                        {
+                            <option value="@wh.Id">@wh.Name (@wh.Code)</option>
+                        }
+                    </select>
+                    <button type="button" id="btnCheckAvailability" class="btn btn-outline-primary btn-sm">
+                        Check
+                    </button>
+                </div>
+            </div>
+            <div class="card-body" id="availabilityResultContainer" style="display: none;">
+                <div id="availabilityAlert" class="alert mb-3" role="alert"></div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Component</th>
+                                <th>SKU</th>
+                                <th class="text-center">Required Quantity</th>
+                                <th class="text-center">Available Stock</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-end">Shortage</th>
+                            </tr>
+                        </thead>
+                        <tbody id="availabilityTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const warehouseSelect = document.getElementById('warehouseSelect');
+            const btnCheck = document.getElementById('btnCheckAvailability');
+            const resultContainer = document.getElementById('availabilityResultContainer');
+            const alertBox = document.getElementById('availabilityAlert');
+            const tableBody = document.getElementById('availabilityTableBody');
+
+            async function checkWarehouse() {
+                const whId = warehouseSelect.value;
+                if (!whId) return;
+
+                const bouquetId = @Model.BouquetProductId;
+                const qty = @Model.RequestedBouquetQuantity;
+
+                try {
+                    const res = await fetch(`/Bouquets/CheckAvailabilityJson?bouquetProductId=${bouquetId}&quantity=${qty}&warehouseId=${whId}`);
+                    if (!res.ok) throw new Error('Failed to query availability.');
+
+                    const data = await res.json();
+                    renderAvailability(data);
+                } catch (err) {
+                    alert('Error checking warehouse availability: ' + err.message);
+                }
+            }
+
+            function renderAvailability(data) {
+                resultContainer.style.display = 'block';
+                tableBody.innerHTML = '';
+
+                if (data.allAvailable) {
+                    alertBox.className = 'alert alert-success d-flex align-items-center';
+                    alertBox.innerHTML = `<i class="bi bi-check-circle-fill fs-4 me-2"></i><div><strong>All Components Available!</strong> Warehouse '${data.warehouseName}' has sufficient stock for all ${data.requestedQuantity} requested bouquet(s).</div>`;
+                } else {
+                    alertBox.className = 'alert alert-danger d-flex align-items-center';
+                    alertBox.innerHTML = `<i class="bi bi-exclamation-triangle-fill fs-4 me-2"></i><div><strong>Insufficient Stock!</strong> Warehouse '${data.warehouseName}' does not have enough stock for one or more components.</div>`;
+                }
+
+                data.components.forEach(c => {
+                    const tr = document.createElement('tr');
+                    const badge = c.isSufficient 
+                        ? `<span class="badge bg-success">In Stock</span>` 
+                        : `<span class="badge bg-danger">Shortage</span>`;
+                    const shortageText = c.shortageQuantity > 0 
+                        ? `<span class="text-danger fw-bold">-${c.shortageQuantity} ${c.unitSymbol}</span>` 
+                        : `<span class="text-muted">None</span>`;
+
+                    tr.innerHTML = `
+                        <td class="fw-semibold">${c.productName}</td>
+                        <td><code>${c.sku}</code></td>
+                        <td class="text-center fw-bold">${c.quantityRequired} ${c.unitSymbol}</td>
+                        <td class="text-center">${c.availableStock} ${c.unitSymbol}</td>
+                        <td class="text-center">${badge}</td>
+                        <td class="text-end">${shortageText}</td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+            }
+
+            btnCheck.addEventListener('click', checkWarehouse);
+            warehouseSelect.addEventListener('change', checkWarehouse);
+
+            // Auto-check first warehouse if present
+            if (warehouseSelect.options.length > 1) {
+                warehouseSelect.selectedIndex = 1;
+                checkWarehouse();
+            }
+        });
+    </script>
+}

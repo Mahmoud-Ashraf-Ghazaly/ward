@@ -1,0 +1,72 @@
+@model ward.Models.Inventory.IssueStockViewModel
+@{
+    ViewData["Title"] = "Issue / Write-off Stock";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h4 class="mb-0 fw-bold text-danger">📤 Issue / Write-off Stock</h4>
+                <a asp-action="Index" class="btn btn-sm btn-outline-secondary">Cancel</a>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="Issue" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="IdempotencyToken" />
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-7">
+                            <label asp-for="ProductId" class="form-label fw-semibold">Product *</label>
+                            <select asp-for="ProductId" class="form-select" asp-items="ViewBag.Products" autofocus>
+                                <option value="">-- Select Product --</option>
+                            </select>
+                            <span asp-validation-for="ProductId" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-5">
+                            <label asp-for="WarehouseId" class="form-label fw-semibold">Warehouse *</label>
+                            <select asp-for="WarehouseId" class="form-select" asp-items="ViewBag.Warehouses">
+                                <option value="">-- Select Warehouse --</option>
+                            </select>
+                            <span asp-validation-for="WarehouseId" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="Quantity" class="form-label fw-semibold">Quantity to Deduct *</label>
+                            <input asp-for="Quantity" class="form-control font-monospace" type="number" step="any" min="0.0001" placeholder="e.g. 15" />
+                            <div class="form-text">Cannot exceed currently available stock.</div>
+                            <span asp-validation-for="Quantity" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="ReasonType" class="form-label fw-semibold">Issue Reason *</label>
+                            <select asp-for="ReasonType" class="form-select">
+                                <option value="@((int)ward.Entities.Enums.MovementType.DamagedDiscardOut)">Damaged / Wilted Flowers (Write-off)</option>
+                                <option value="@((int)ward.Entities.Enums.MovementType.BouquetAssemblyOut)">Store Display / Workshop Sample</option>
+                            </select>
+                            <span asp-validation-for="ReasonType" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Notes" class="form-label fw-semibold">Authorization / Audit Notes *</label>
+                        <textarea asp-for="Notes" class="form-control" rows="3" placeholder="Explain reason for deduction (e.g. Broken stems during transit, wilting after heatwave)..."></textarea>
+                        <div class="form-text">Required for audit tracking.</div>
+                        <span asp-validation-for="Notes" class="text-danger small"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a asp-action="Index" class="btn btn-outline-secondary">Back to Stock</a>
+                        <button type="submit" class="btn btn-danger px-4">Post Stock Issue</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

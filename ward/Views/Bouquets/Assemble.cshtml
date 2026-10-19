@@ -1,0 +1,169 @@
+@model ward.Models.Production.AssembleBouquetsViewModel
+
+@{
+    ViewData["Title"] = "Assemble Bouquets";
+    var bouquetRecipes = ViewBag.BouquetProducts as List<ward.Models.Production.BouquetRecipeListItemViewModel> ?? new List<ward.Models.Production.BouquetRecipeListItemViewModel>();
+    var warehouses = ViewBag.Warehouses as List<ward.Entities.Inventory.Warehouse> ?? new List<ward.Entities.Inventory.Warehouse>();
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2 text-primary fw-bold mb-1">
+                    <i class="bi bi-box-seam me-2"></i>Assemble Bouquet Stock
+                </h1>
+                <p class="text-muted mb-0">Convert raw flower components and packaging into finished bouquet stock without double-counting.</p>
+            </div>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Recipes
+            </a>
+        </div>
+
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="card-title mb-0 fw-semibold">Assembly Parameters</h5>
+            </div>
+            <div class="card-body">
+                <form asp-action="Assemble" method="post" id="assembleForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="IdempotencyToken" />
+
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger shadow-sm" role="alert"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="BouquetProductId" class="form-label fw-bold">Bouquet Product to Assemble <span class="text-danger">*</span></label>
+                        <select asp-for="BouquetProductId" class="form-select select2" id="bouquetSelect" required>
+                            <option value="">-- Select Bouquet with Active Recipe --</option>
+                            @foreach (var item in bouquetRecipes)
+                            {
+                                <option value="@item.BouquetProductId" 
+                                        selected="@(item.BouquetProductId == Model.BouquetProductId ? "selected" : null)">
+                                    @item.BouquetProductName (@item.BouquetSKU) - @item.ComponentCount components [Est. Cost: $@item.EstimatedCost.ToString("F2")]
+                                </option>
+                            }
+                        </select>
+                        <span asp-validation-for="BouquetProductId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="WarehouseId" class="form-label fw-bold">Target Warehouse <span class="text-danger">*</span></label>
+                            <select asp-for="WarehouseId" class="form-select" id="warehouseSelect" required>
+                                <option value="">-- Select Warehouse --</option>
+                                @foreach (var wh in warehouses)
+                                {
+                                    <option value="@wh.Id" selected="@(wh.IsDefault ? "selected" : null)">
+                                        @wh.Name (@wh.Code)
+                                    </option>
+                                }
+                            </select>
+                            <span asp-validation-for="WarehouseId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="QuantityToAssemble" class="form-label fw-bold">Quantity to Assemble <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input asp-for="QuantityToAssemble" type="number" min="1" max="10000" class="form-control" id="qtyInput" required />
+                                <span class="input-group-text">units</span>
+                            </div>
+                            <span asp-validation-for="QuantityToAssemble" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Notes" class="form-label">Assembly Notes / Batch Reference</label>
+                        <input asp-for="Notes" class="form-control" placeholder="e.g. Prepared for Friday evening display" />
+                        <span asp-validation-for="Notes" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Component Check Status Preview Box -->
+                    <div id="availabilityPreview" class="border rounded p-3 mb-4 bg-light" style="display: none;">
+                        <h6 class="fw-bold mb-2">Component Availability Status:</h6>
+                        <div id="previewStatus"></div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-success px-4 shadow-sm" id="btnSubmitAssemble">
+                            <i class="bi bi-box-arrow-in-down me-1"></i> Confirm & Execute Assembly
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="alert alert-info shadow-sm">
+            <h6 class="fw-bold"><i class="bi bi-info-circle me-1"></i> How Assembly Works:</h6>
+            <ul class="mb-0 small">
+                <li>Deducts required raw flower stems, wrapping sheets, and ribbons from the selected warehouse stock under <code>BouquetAssemblyOut</code>.</li>
+                <li>Increases finished bouquet inventory under <code>BouquetAssemblyIn</code>.</li>
+                <li>Updates bouquet's weighted average unit cost using component and labor costs.</li>
+                <li>Guarantees zero double-counting via atomic database transactions.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const bouquetSelect = document.getElementById('bouquetSelect');
+            const warehouseSelect = document.getElementById('warehouseSelect');
+            const qtyInput = document.getElementById('qtyInput');
+            const previewBox = document.getElementById('availabilityPreview');
+            const previewStatus = document.getElementById('previewStatus');
+            const btnSubmit = document.getElementById('btnSubmitAssemble');
+
+            async function checkStock() {
+                const bId = bouquetSelect.value;
+                const wId = warehouseSelect.value;
+                const qty = qtyInput.value;
+
+                if (!bId || !wId || !qty || qty <= 0) {
+                    previewBox.style.display = 'none';
+                    return;
+                }
+
+                try {
+                    const res = await fetch(`/Bouquets/CheckAvailabilityJson?bouquetProductId=${bId}&quantity=${qty}&warehouseId=${wId}`);
+                    if (!res.ok) {
+                        previewBox.style.display = 'none';
+                        return;
+                    }
+
+                    const data = await res.json();
+                    previewBox.style.display = 'block';
+
+                    if (data.allAvailable) {
+                        previewStatus.innerHTML = `
+                            <div class="text-success fw-semibold">
+                                <i class="bi bi-check-circle-fill me-1"></i> All components available in sufficient stock. Ready to assemble!
+                            </div>
+                        `;
+                        btnSubmit.removeAttribute('disabled');
+                    } else {
+                        const shortages = data.components.filter(c => !c.isSufficient).map(c => `<li><strong>${c.productName}</strong>: Need ${c.quantityRequired} ${c.unitSymbol}, Available: ${c.availableStock} ${c.unitSymbol} (Short by ${c.shortageQuantity})</li>`).join('');
+                        previewStatus.innerHTML = `
+                            <div class="text-danger fw-semibold mb-2">
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i> Insufficient stock in selected warehouse:
+                            </div>
+                            <ul class="text-danger small mb-0">${shortages}</ul>
+                        `;
+                    }
+                } catch (e) {
+                    previewBox.style.display = 'none';
+                }
+            }
+
+            bouquetSelect.addEventListener('change', checkStock);
+            warehouseSelect.addEventListener('change', checkStock);
+            qtyInput.addEventListener('input', checkStock);
+
+            if (bouquetSelect.value && warehouseSelect.value) {
+                checkStock();
+            }
+        });
+    </script>
+}

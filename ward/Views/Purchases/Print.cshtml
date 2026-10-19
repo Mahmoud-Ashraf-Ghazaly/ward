@@ -1,0 +1,212 @@
+@model ward.Models.Purchasing.PurchaseInvoiceDetailsViewModel
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Purchase Invoice - @Model.InvoiceNumber</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <style>
+        body {
+            background-color: #fff;
+            color: #212529;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-size: 14px;
+        }
+        .invoice-box {
+            max-width: 850px;
+            margin: auto;
+            padding: 30px;
+            border: 1px solid #eee;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+        }
+        .invoice-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #198754;
+        }
+        .table-items th {
+            background-color: #f8f9fa !important;
+            border-bottom: 2px solid #dee2e6;
+        }
+        @@media print {
+            body {
+                font-size: 12px;
+            }
+            .invoice-box {
+                border: none;
+                box-shadow: none;
+                padding: 0;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="py-4">
+    <div class="invoice-box">
+        <div class="no-print d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+            <span class="text-muted">Print Preview</span>
+            <div class="d-flex gap-2">
+                <button onclick="window.print()" class="btn btn-primary btn-sm">
+                    Print / Save as PDF
+                </button>
+                <button onclick="window.close()" class="btn btn-outline-secondary btn-sm">
+                    Close Window
+                </button>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <div class="row align-items-center mb-4">
+            <div class="col-6">
+                <div class="invoice-title mb-1">FloraFlow</div>
+                <div class="text-muted small">Flower Shop & Floral Design Studio</div>
+                <div class="text-muted small">100 Orchid Boulevard, Central Market</div>
+                <div class="text-muted small">VAT ID: FLORA-TAX-998822</div>
+            </div>
+            <div class="col-6 text-end">
+                <h3 class="fw-bold mb-0 text-dark">PURCHASE INVOICE</h3>
+                <div class="h5 text-primary fw-bold mb-1">#@Model.InvoiceNumber</div>
+                <div class="text-muted small">Status: <strong>@Model.Status</strong></div>
+                <div class="text-muted small">Date: @Model.InvoiceDateUtc.ToString("dd MMMM yyyy")</div>
+                @if (Model.DueDateUtc.HasValue)
+                {
+                    <div class="text-muted small">Due Date: @Model.DueDateUtc.Value.ToString("dd MMMM yyyy")</div>
+                }
+            </div>
+        </div>
+
+        <hr />
+
+        <!-- Address Boxes -->
+        <div class="row g-3 mb-4">
+            <div class="col-6">
+                <div class="p-3 border rounded bg-light h-100">
+                    <strong class="text-uppercase small text-muted d-block mb-1">Supplier / Vendor:</strong>
+                    <div class="fw-bold fs-6">@Model.SupplierName</div>
+                    @if (!string.IsNullOrWhiteSpace(Model.SupplierAddress))
+                    {
+                        <div class="text-muted small">@Model.SupplierAddress</div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.SupplierPhone))
+                    {
+                        <div class="text-muted small">Tel: @Model.SupplierPhone</div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.SupplierTaxNumber))
+                    {
+                        <div class="text-muted small">Tax / VAT ID: @Model.SupplierTaxNumber</div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.SupplierInvoiceNumber))
+                    {
+                        <div class="text-muted small mt-1">Vendor Bill #: <strong>@Model.SupplierInvoiceNumber</strong></div>
+                    }
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="p-3 border rounded bg-light h-100">
+                    <strong class="text-uppercase small text-muted d-block mb-1">Delivered To:</strong>
+                    <div class="fw-bold fs-6">@Model.WarehouseName</div>
+                    <div class="text-muted small">FloraFlow Receiving Dock</div>
+                    @if (!string.IsNullOrWhiteSpace(Model.Notes))
+                    {
+                        <div class="text-muted small mt-2"><strong>Notes:</strong> @Model.Notes</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Items Table -->
+        <div class="table-responsive mb-4">
+            <table class="table table-bordered table-items align-middle">
+                <thead>
+                    <tr>
+                        <th style="width: 5%;">#</th>
+                        <th>Product & Description</th>
+                        <th>SKU</th>
+                        <th class="text-center">Quantity</th>
+                        <th class="text-end">Unit Cost</th>
+                        <th class="text-end">Discount</th>
+                        <th class="text-end">Line Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < Model.Items.Count; i++)
+                    {
+                        var it = Model.Items[i];
+                        <tr>
+                            <td>@(i + 1)</td>
+                            <td><strong>@it.ProductName</strong></td>
+                            <td><code>@it.ProductSKU</code></td>
+                            <td class="text-center">@it.Quantity.ToString("G29") @it.UnitSymbol</td>
+                            <td class="text-end">$@it.UnitCost.ToString("F2")</td>
+                            <td class="text-end">$@it.DiscountAmount.ToString("F2")</td>
+                            <td class="text-end fw-bold">$@it.LineTotal.ToString("F2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Totals Breakdown -->
+        <div class="row justify-content-end mb-5">
+            <div class="col-5">
+                <table class="table table-sm table-borderless">
+                    <tr>
+                        <td class="text-muted">SubTotal:</td>
+                        <td class="text-end fw-semibold">$@Model.SubTotal.ToString("F2")</td>
+                    </tr>
+                    @if (Model.DiscountAmount > 0)
+                    {
+                        <tr class="text-danger">
+                            <td>Discount:</td>
+                            <td class="text-end">-$@Model.DiscountAmount.ToString("F2")</td>
+                        </tr>
+                    }
+                    <tr>
+                        <td class="text-muted">Tax (@Model.TaxRatePercentage.ToString("G29")%):</td>
+                        <td class="text-end fw-semibold">+$@Model.TaxAmount.ToString("F2")</td>
+                    </tr>
+                    <tr class="border-top border-bottom">
+                        <td class="h5 fw-bold text-dark py-2">Grand Total:</td>
+                        <td class="h5 fw-bold text-primary text-end py-2">$@Model.GrandTotal.ToString("F2")</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small">Paid Amount:</td>
+                        <td class="text-end text-success fw-bold">$@Model.PaidAmount.ToString("F2")</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small">Balance Due:</td>
+                        <td class="text-end text-danger fw-bold">$@Model.Balance.ToString("F2")</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Signatures Footer -->
+        <div class="row pt-4 mt-5 border-top text-center text-muted small">
+            <div class="col-4">
+                <div style="border-top: 1px dotted #999; margin-top: 30px;" class="pt-1">
+                    Received By (Warehouse Clerk)
+                </div>
+            </div>
+            <div class="col-4">
+                <div style="border-top: 1px dotted #999; margin-top: 30px;" class="pt-1">
+                    Inspected & Quality Checked
+                </div>
+            </div>
+            <div class="col-4">
+                <div style="border-top: 1px dotted #999; margin-top: 30px;" class="pt-1">
+                    Authorized By (Store Manager)
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

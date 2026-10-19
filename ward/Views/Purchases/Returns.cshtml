@@ -1,0 +1,103 @@
+@model IEnumerable<ward.Models.Purchasing.PurchaseReturnListItemViewModel>
+
+@{
+    ViewData["Title"] = "Purchase Returns";
+    var returnList = Model?.ToList() ?? new List<ward.Models.Purchasing.PurchaseReturnListItemViewModel>();
+    var totalRefunded = returnList.Sum(r => r.TotalRefundAmount);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+        <h1 class="h2 text-warning fw-bold mb-1">
+            <i class="bi bi-arrow-return-left me-2"></i>Purchase Returns
+        </h1>
+        <p class="text-muted mb-0">Audit history of vendor returns, damaged flower write-offs, and supplier balance credits.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-receipt me-1"></i> Purchase Invoices
+        </a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 border-start border-warning border-4">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold">Total Return Transactions</div>
+                <div class="h3 fw-bold text-dark mb-0">@returnList.Count</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 border-start border-danger border-4">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold">Total Refund Credited</div>
+                <div class="h3 fw-bold text-danger mb-0">-$@totalRefunded.ToString("F2")</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3">
+        <h5 class="card-title mb-0 fw-semibold">Processed Returns</h5>
+    </div>
+    <div class="card-body p-0">
+        @if (!returnList.Any())
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-box-arrow-left display-4 mb-3 d-block opacity-50"></i>
+                <h5 class="fw-bold">No purchase returns recorded</h5>
+                <p>Returns can be initiated from any posted purchase invoice.</p>
+                <a asp-action="Index" class="btn btn-outline-primary mt-2">
+                    <i class="bi bi-receipt me-1"></i> View Invoices
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Return Number</th>
+                            <th>Date</th>
+                            <th>Invoice #</th>
+                            <th>Supplier</th>
+                            <th>Warehouse</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th class="text-end">Refund Amount</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in returnList)
+                        {
+                            <tr>
+                                <td><strong><a asp-action="ReturnDetails" asp-route-id="@r.Id" class="text-decoration-none">@r.ReturnNumber</a></strong></td>
+                                <td>@r.ReturnDateUtc.ToString("yyyy-MM-dd")</td>
+                                <td>
+                                    <a asp-action="Details" asp-route-id="@r.PurchaseInvoiceId" class="badge bg-light text-dark border text-decoration-none">
+                                        @r.InvoiceNumber
+                                    </a>
+                                </td>
+                                <td><span class="fw-semibold">@r.SupplierName</span></td>
+                                <td><span class="badge bg-light text-dark border">@r.WarehouseName</span></td>
+                                <td>@r.Reason</td>
+                                <td><span class="badge bg-success">@r.Status</span></td>
+                                <td class="text-end fw-bold text-danger">-$@r.TotalRefundAmount.ToString("F2")</td>
+                                <td class="text-end">
+                                    <a asp-action="ReturnDetails" asp-route-id="@r.Id" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

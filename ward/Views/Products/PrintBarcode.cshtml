@@ -1,0 +1,71 @@
+@model ward.Models.Catalog.ProductBarcodeLabelViewModel
+@{
+    ViewData["Title"] = "Print Barcode Labels: " + Model.ProductName;
+}
+
+<style>
+    @@media print {
+        body {
+            background-color: #ffffff !important;
+            margin: 0;
+            padding: 0;
+        }
+        header, footer, .no-print, .btn, .navbar {
+            display: none !important;
+        }
+        .label-container {
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+        }
+        .barcode-label {
+            page-break-inside: avoid;
+            margin-bottom: 12px;
+        }
+    }
+
+    .barcode-label {
+        width: 320px;
+        border: 2px dashed #ccc;
+        padding: 12px;
+        border-radius: 8px;
+        text-align: center;
+        background: #fff;
+        margin: 8px;
+        display: inline-block;
+    }
+</style>
+
+<div class="no-print d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1">Print Barcode Labels</h3>
+        <p class="text-muted mb-0">Format: Standard Flower Shop Shelf / Pot Adhesive Label (Code-128 Vector SVG)</p>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+        <form method="get" class="d-flex align-items-center gap-2">
+            <input type="hidden" name="id" value="@Model.ProductId" />
+            <label class="text-muted small fw-semibold">Copies:</label>
+            <input type="number" name="count" value="@Model.NumberOfLabels" min="1" max="50" class="form-control form-control-sm" style="width: 70px;" />
+            <button type="submit" class="btn btn-sm btn-outline-secondary">Update</button>
+        </form>
+        <button onclick="window.print()" class="btn btn-primary">Print Labels</button>
+        <a asp-action="Details" asp-route-id="@Model.ProductId" class="btn btn-outline-secondary">Back</a>
+    </div>
+</div>
+
+<div class="label-container bg-light p-4 rounded text-center">
+    @for (int i = 0; i < Model.NumberOfLabels; i++)
+    {
+        <div class="barcode-label shadow-sm">
+            <div class="fw-bold text-truncate mb-1" style="max-width: 290px;">@Model.ProductName</div>
+            <div class="d-flex justify-content-between align-items-center px-2 small mb-1">
+                <span class="text-muted font-monospace">@Model.SKU</span>
+                <span class="fw-bold text-success font-monospace fs-6">${@Model.UnitPrice.ToString("N2")}</span>
+            </div>
+            <div class="my-1">
+                @Html.Raw(Model.BarcodeSvg)
+            </div>
+            <div class="text-muted small" style="font-size: 10px;">FloraFlow Management System</div>
+        </div>
+    }
+</div>

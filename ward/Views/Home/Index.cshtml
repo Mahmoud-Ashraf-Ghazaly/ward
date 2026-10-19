@@ -1,0 +1,140 @@
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="p-4 bg-white rounded shadow-sm border-start border-4 border-success">
+            <h1 class="h3 fw-bold text-dark mb-1">Flower Shop Management System (FloraFlow)</h1>
+            <p class="text-muted mb-0">Robust architecture powered by ASP.NET Core MVC, Entity Framework Core, SQL Server, and ASP.NET Core Identity.</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small text-uppercase fw-semibold">Database Engine</span>
+                    <span class="badge bg-success-subtle text-success">Active</span>
+                </div>
+                <h4 class="fw-bold mb-1">SQL Server</h4>
+                <p class="text-muted small mb-0">EF Core with explicit decimal precisions & concurrency tokens.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small text-uppercase fw-semibold">Security & Roles</span>
+                    <span class="badge bg-primary-subtle text-primary">Configured</span>
+                </div>
+                <h4 class="fw-bold mb-1">4 Roles</h4>
+                <p class="text-muted small mb-0">Admin, Manager, Cashier, and Inventory Clerk with fine-grained policies.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small text-uppercase fw-semibold">Initial Seed</span>
+                    <span class="badge bg-info-subtle text-info">Ready</span>
+                </div>
+                <h4 class="fw-bold mb-1">5 Units & 5 Cats</h4>
+                <p class="text-muted small mb-0">Stems, Bunches, Vases, and 2 default warehouses configured.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="text-muted small text-uppercase fw-semibold">Inventory Protection</span>
+                    <span class="badge bg-warning-subtle text-warning">Guarded</span>
+                </div>
+                <h4 class="fw-bold mb-1">Optimistic Concurrency</h4>
+                <p class="text-muted small mb-0">Prevents overselling under concurrent checkouts using rowversion tokens.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold">Active Roles & Authorization Policies</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <div>
+                            <strong>Admin</strong>
+                            <div class="text-muted small">Full system access, user management, and configuration.</div>
+                        </div>
+                        <span class="badge bg-dark">System Administrator</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <div>
+                            <strong>Manager</strong>
+                            <div class="text-muted small">Catalog editing, pricing, reports, stocktaking approval, and returns.</div>
+                        </div>
+                        <span class="badge bg-primary">Store Management</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <div>
+                            <strong>Cashier</strong>
+                            <div class="text-muted small">POS checkout, invoice creation, and payment collection.</div>
+                        </div>
+                        <span class="badge bg-success">Sales Terminal</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <div>
+                            <strong>Inventory Clerk</strong>
+                            <div class="text-muted small">Stock receiving, physical count entry, and warehouse transfers.</div>
+                        </div>
+                        <span class="badge bg-info">Warehouse Operations</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold">Pre-Configured Seed Warehouses & Units</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Warehouse Code</th>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="badge bg-secondary">MAIN</span></td>
+                                <td>Main Store Floor</td>
+                                <td>Default Retail Display</td>
+                                <td><span class="badge bg-success">Active</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="badge bg-secondary">COLD-ROOM</span></td>
+                                <td>Cold Storage Facility</td>
+                                <td>Temperature-Controlled (4°C)</td>
+                                <td><span class="badge bg-success">Active</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

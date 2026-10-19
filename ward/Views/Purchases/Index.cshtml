@@ -1,0 +1,256 @@
+@model ward.Models.Purchasing.PurchaseInvoiceFilterViewModel
+
+@{
+    ViewData["Title"] = "Purchase Invoices & Bills";
+    var suppliers = ViewBag.Suppliers as List<ward.Models.Purchasing.SupplierListItemViewModel> ?? new List<ward.Models.Purchasing.SupplierListItemViewModel>();
+    var warehouses = ViewBag.Warehouses as List<ward.Models.Inventory.WarehouseListItemViewModel> ?? new List<ward.Models.Inventory.WarehouseListItemViewModel>();
+
+    var totalPurchased = Model.Invoices.Where(i => i.Status != ward.Entities.Enums.PurchaseInvoiceStatus.Cancelled).Sum(i => i.GrandTotal);
+    var totalBalance = Model.Invoices.Where(i => i.Status != ward.Entities.Enums.PurchaseInvoiceStatus.Cancelled).Sum(i => i.Balance);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+        <h1 class="h2 text-primary fw-bold mb-1">
+            <i class="bi bi-receipt-cutoff me-2"></i>Purchase Invoices & Bills
+        </h1>
+        <p class="text-muted mb-0">Record supplier purchases, receive goods into warehouse stock, calculate weighted costs, and track balances.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Returns" class="btn btn-outline-warning">
+            <i class="bi bi-arrow-return-left me-1"></i> Purchase Returns
+        </a>
+        <a asp-controller="Suppliers" asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-people me-1"></i> Suppliers
+        </a>
+        <a asp-action="Create" class="btn btn-primary shadow-sm">
+            <i class="bi bi-plus-circle me-1"></i> New Purchase Invoice
+        </a>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Summary Metric Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 border-start border-primary border-4">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold">Total Invoices</div>
+                <div class="h3 fw-bold text-dark mb-0">@Model.TotalCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 border-start border-success border-4">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold">Page Total Purchased</div>
+                <div class="h3 fw-bold text-success mb-0">$@totalPurchased.ToString("F2")</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 border-start border-warning border-4">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold">Outstanding Unpaid Balance</div>
+                <div class="h3 fw-bold text-warning mb-0">$@totalBalance.ToString("F2")</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Card -->
+<div class="card shadow-sm border-0 mb-4 bg-light">
+    <div class="card-body p-3">
+        <form method="get" asp-action="Index" class="row g-2 align-items-center">
+            <div class="col-md-3">
+                <input type="text" name="SearchQuery" value="@Model.SearchQuery" class="form-control" placeholder="Search invoice #, ref, supplier..." />
+            </div>
+            <div class="col-md-2">
+                <select name="SupplierId" class="form-select">
+                    <option value="">All Suppliers</option>
+                    @foreach (var s in suppliers)
+                    {
+                        <option value="@s.Id" selected="@(Model.SupplierId == s.Id ? "selected" : null)">@s.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="WarehouseId" class="form-select">
+                    <option value="">All Warehouses</option>
+                    @foreach (var w in warehouses)
+                    {
+                        <option value="@w.Id" selected="@(Model.WarehouseId == w.Id ? "selected" : null)">@w.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="Status" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="Draft" selected="@(Model.Status == ward.Entities.Enums.PurchaseInvoiceStatus.Draft ? "selected" : null)">Draft</option>
+                    <option value="Posted" selected="@(Model.Status == ward.Entities.Enums.PurchaseInvoiceStatus.Posted ? "selected" : null)">Posted</option>
+                    <option value="PartiallyReturned" selected="@(Model.Status == ward.Entities.Enums.PurchaseInvoiceStatus.PartiallyReturned ? "selected" : null)">Partially Returned</option>
+                    <option value="FullyReturned" selected="@(Model.Status == ward.Entities.Enums.PurchaseInvoiceStatus.FullyReturned ? "selected" : null)">Fully Returned</option>
+                    <option value="Cancelled" selected="@(Model.Status == ward.Entities.Enums.PurchaseInvoiceStatus.Cancelled ? "selected" : null)">Cancelled</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1">
+                    <i class="bi bi-filter me-1"></i> Filter
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Table Card -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3">
+        <h5 class="card-title mb-0 fw-semibold">Purchase Invoices</h5>
+    </div>
+    <div class="card-body p-0">
+        @if (!Model.Invoices.Any())
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-inbox display-4 mb-3 d-block opacity-50"></i>
+                <h5 class="fw-bold">No purchase invoices found</h5>
+                <p>Create a purchase invoice to record incoming flower inventory and update supplier accounts.</p>
+                <a asp-action="Create" class="btn btn-primary mt-2">
+                    <i class="bi bi-plus-lg me-1"></i> Create First Invoice
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Invoice Number</th>
+                            <th>Date</th>
+                            <th>Supplier</th>
+                            <th>Destination Warehouse</th>
+                            <th>Status</th>
+                            <th class="text-end">SubTotal</th>
+                            <th class="text-end">Tax</th>
+                            <th class="text-end">Grand Total</th>
+                            <th class="text-end">Balance Due</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var inv in Model.Invoices)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-bold"><a asp-action="Details" asp-route-id="@inv.Id" class="text-decoration-none text-primary">@inv.InvoiceNumber</a></div>
+                                    @if (!string.IsNullOrWhiteSpace(inv.SupplierInvoiceNumber))
+                                    {
+                                        <div class="text-muted small">Ref: @inv.SupplierInvoiceNumber</div>
+                                    }
+                                </td>
+                                <td>
+                                    <div>@inv.InvoiceDateUtc.ToString("yyyy-MM-dd")</div>
+                                    <div class="text-muted small">@inv.ItemsCount items</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">@inv.SupplierName</div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">@inv.WarehouseName</span>
+                                </td>
+                                <td>
+                                    @switch (inv.Status)
+                                    {
+                                        case ward.Entities.Enums.PurchaseInvoiceStatus.Draft:
+                                            <span class="badge bg-secondary">Draft</span>
+                                            break;
+                                        case ward.Entities.Enums.PurchaseInvoiceStatus.Posted:
+                                            <span class="badge bg-success">Posted</span>
+                                            break;
+                                        case ward.Entities.Enums.PurchaseInvoiceStatus.PartiallyReturned:
+                                            <span class="badge bg-warning text-dark">Partially Returned</span>
+                                            break;
+                                        case ward.Entities.Enums.PurchaseInvoiceStatus.FullyReturned:
+                                            <span class="badge bg-info text-dark">Fully Returned</span>
+                                            break;
+                                        case ward.Entities.Enums.PurchaseInvoiceStatus.Cancelled:
+                                            <span class="badge bg-danger">Cancelled</span>
+                                            break;
+                                    }
+                                </td>
+                                <td class="text-end text-muted">$@inv.SubTotal.ToString("F2")</td>
+                                <td class="text-end text-muted">$@inv.TaxAmount.ToString("F2")</td>
+                                <td class="text-end fw-bold text-dark">$@inv.GrandTotal.ToString("F2")</td>
+                                <td class="text-end">
+                                    @if (inv.Balance <= 0)
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">Paid</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="fw-bold text-danger">$@inv.Balance.ToString("F2")</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-action="Details" asp-route-id="@inv.Id" class="btn btn-outline-primary" title="View Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a asp-action="Print" asp-route-id="@inv.Id" target="_blank" class="btn btn-outline-secondary" title="Print Invoice">
+                                            <i class="bi bi-printer"></i>
+                                        </a>
+                                        @if (inv.Status == ward.Entities.Enums.PurchaseInvoiceStatus.Posted || inv.Status == ward.Entities.Enums.PurchaseInvoiceStatus.PartiallyReturned)
+                                        {
+                                            <a asp-action="CreateReturn" asp-route-invoiceId="@inv.Id" class="btn btn-outline-warning" title="Issue Purchase Return">
+                                                <i class="bi bi-arrow-return-left"></i>
+                                            </a>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.TotalPages > 1)
+            {
+                <div class="card-footer bg-white d-flex justify-content-between align-items-center py-3">
+                    <span class="text-muted small">Showing page @Model.PageNumber of @Model.TotalPages (Total: @Model.TotalCount)</span>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
+                                <a class="page-link" asp-action="Index" asp-route-PageNumber="@(Model.PageNumber - 1)" asp-route-SearchQuery="@Model.SearchQuery" asp-route-SupplierId="@Model.SupplierId" asp-route-WarehouseId="@Model.WarehouseId" asp-route-Status="@Model.Status">Previous</a>
+                            </li>
+                            @for (int p = 1; p <= Model.TotalPages; p++)
+                            {
+                                <li class="page-item @(p == Model.PageNumber ? "active" : "")">
+                                    <a class="page-link" asp-action="Index" asp-route-PageNumber="@p" asp-route-SearchQuery="@Model.SearchQuery" asp-route-SupplierId="@Model.SupplierId" asp-route-WarehouseId="@Model.WarehouseId" asp-route-Status="@Model.Status">@p</a>
+                                </li>
+                            }
+                            <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
+                                <a class="page-link" asp-action="Index" asp-route-PageNumber="@(Model.PageNumber + 1)" asp-route-SearchQuery="@Model.SearchQuery" asp-route-SupplierId="@Model.SupplierId" asp-route-WarehouseId="@Model.WarehouseId" asp-route-Status="@Model.Status">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            }
+        }
+    </div>
+</div>

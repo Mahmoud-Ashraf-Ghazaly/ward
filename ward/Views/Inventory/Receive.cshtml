@@ -1,0 +1,78 @@
+@model ward.Models.Inventory.ReceiveStockViewModel
+@{
+    ViewData["Title"] = "Receive Stock (Purchase / Inbound)";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h4 class="mb-0 fw-bold">📥 Receive Inbound Stock</h4>
+                <a asp-action="Index" class="btn btn-sm btn-outline-secondary">Cancel</a>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="Receive" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="IdempotencyToken" />
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-7">
+                            <label asp-for="ProductId" class="form-label fw-semibold">Product / Flower *</label>
+                            <select asp-for="ProductId" class="form-select" asp-items="ViewBag.Products" autofocus>
+                                <option value="">-- Select Product --</option>
+                            </select>
+                            <span asp-validation-for="ProductId" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-5">
+                            <label asp-for="WarehouseId" class="form-label fw-semibold">Receiving Warehouse *</label>
+                            <select asp-for="WarehouseId" class="form-select" asp-items="ViewBag.Warehouses">
+                                <option value="">-- Select Destination --</option>
+                            </select>
+                            <span asp-validation-for="WarehouseId" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="Quantity" class="form-label fw-semibold">Inbound Quantity *</label>
+                            <input asp-for="Quantity" class="form-control font-monospace" type="number" step="any" min="0.0001" placeholder="e.g. 100" />
+                            <div class="form-text">Supports fractional quantities (e.g. meters) or whole stems.</div>
+                            <span asp-validation-for="Quantity" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="UnitCost" class="form-label fw-semibold">Purchase Unit Cost ($) *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input asp-for="UnitCost" class="form-control font-monospace" type="number" step="0.01" min="0.00" placeholder="0.00" />
+                            </div>
+                            <div class="form-text">Updates weighted average cost automatically.</div>
+                            <span asp-validation-for="UnitCost" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="ReferenceNumber" class="form-label fw-semibold">Supplier Invoice / PO Reference *</label>
+                        <input asp-for="ReferenceNumber" class="form-control" placeholder="e.g. PO-2026-1049, Holland Flowers Inv #8832" />
+                        <span asp-validation-for="ReferenceNumber" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Notes" class="form-label fw-semibold">Notes / Batch Information</label>
+                        <textarea asp-for="Notes" class="form-control" rows="2" placeholder="Quality inspection results, grower name, delivery notes..."></textarea>
+                        <span asp-validation-for="Notes" class="text-danger small"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a asp-action="Index" class="btn btn-outline-secondary">Back to Stock</a>
+                        <button type="submit" class="btn btn-success px-4">Post Stock Receipt</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

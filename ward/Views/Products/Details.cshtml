@@ -1,0 +1,165 @@
+@model ward.Models.Catalog.ProductDetailsViewModel
+@{
+    ViewData["Title"] = "Product Details: " + Model.Name;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a asp-action="Index">Products</a></li>
+                <li class="breadcrumb-item active" aria-current="page">@Model.Name</li>
+            </ol>
+        </nav>
+        <h2 class="fw-bold mb-0">@Model.Name</h2>
+    </div>
+    <div class="btn-group">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Edit Product</a>
+        <a asp-action="PrintBarcode" asp-route-id="@Model.Id" class="btn btn-outline-dark">Print Barcode Label</a>
+        <a asp-action="Index" class="btn btn-outline-primary">Back to Catalog</a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold">General Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="text-muted small">SKU</label>
+                        <div class="fw-bold font-monospace fs-5">@Model.SKU</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Barcode</label>
+                        <div class="font-monospace fs-5">@(Model.Barcode ?? "—")</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Category</label>
+                        <div class="fw-semibold">@Model.CategoryName</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Product Type</label>
+                        <div>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-6">
+                                @Model.ProductType
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Unit of Measure</label>
+                        <div>@Model.UnitOfMeasureName (@Model.UnitOfMeasureSymbol)</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Status</label>
+                        <div>
+                            @if (Model.IsActive)
+                            {
+                                <span class="badge bg-success">Active &bull; Available for Sale</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Inactive</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label class="text-muted small">Description / Notes</label>
+                        <p class="mb-0 text-muted">@(string.IsNullOrWhiteSpace(Model.Description) ? "No description provided." : Model.Description)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold">Inventory & Valuation Policy</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded text-center">
+                            <div class="text-muted small text-uppercase">Selling Price</div>
+                            <div class="fs-4 fw-bold text-success font-monospace">${@Model.UnitPrice.ToString("N2")}</div>
+                            <div class="small text-muted">per @Model.UnitOfMeasureSymbol</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded text-center">
+                            <div class="text-muted small text-uppercase">Purchase / Avg Cost</div>
+                            <div class="fs-4 fw-bold text-muted font-monospace">${@Model.CurrentAverageCost.ToString("N2")}</div>
+                            <div class="small text-muted">Weighted Average</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded text-center">
+                            <div class="text-muted small text-uppercase">Estimated Margin</div>
+                            @{
+                                var margin = Model.UnitPrice > 0 ? ((Model.UnitPrice - Model.CurrentAverageCost) / Model.UnitPrice) * 100 : 0;
+                            }
+                            <div class="fs-4 fw-bold @(margin >= 30 ? "text-primary" : "text-warning") font-monospace">
+                                @margin.ToString("N1")%
+                            </div>
+                            <div class="small text-muted">Profit Markup</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 mb-4 text-center">
+            <div class="card-header bg-white py-3 text-start">
+                <h5 class="mb-0 fw-bold">Barcode Label</h5>
+            </div>
+            <div class="card-body py-4">
+                @if (!string.IsNullOrEmpty(Model.BarcodeSvg))
+                {
+                    <div class="p-3 bg-white border rounded d-inline-block shadow-sm mb-3">
+                        @Html.Raw(Model.BarcodeSvg)
+                    </div>
+                    <div class="d-grid">
+                        <a asp-action="PrintBarcode" asp-route-id="@Model.Id" class="btn btn-dark">
+                            Print Barcode Label
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted mb-0">No barcode available to preview.</p>
+                }
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold">Current Stock Level</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted">Total on Hand:</span>
+                    <span class="fw-bold fs-5 font-monospace">@Model.TotalStockOnHand.ToString("0.####") @Model.UnitOfMeasureSymbol</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted">Minimum Alert Level:</span>
+                    <span class="font-monospace">@Model.MinimumStockLevel.ToString("0.####") @Model.UnitOfMeasureSymbol</span>
+                </div>
+                @if (Model.TotalStockOnHand <= Model.MinimumStockLevel)
+                {
+                    <div class="alert alert-warning py-2 mb-0 small" role="alert">
+                        <strong>Warning:</strong> Stock is at or below the reorder threshold.
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-success py-2 mb-0 small" role="alert">
+                        Stock level is healthy.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

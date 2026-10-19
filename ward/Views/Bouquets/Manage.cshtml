@@ -1,0 +1,366 @@
+@model ward.Models.Production.BouquetRecipeFormViewModel
+
+@{
+    var isEdit = Model.Id > 0;
+    ViewData["Title"] = isEdit ? $"Edit Bouquet Recipe: {Model.BouquetProductName}" : "Create Bouquet Recipe";
+    var bouquetProducts = ViewBag.BouquetProducts as List<ward.Entities.Catalog.Product> ?? new List<ward.Entities.Catalog.Product>();
+    var componentProducts = ViewBag.ComponentProducts as List<ward.Entities.Catalog.Product> ?? new List<ward.Entities.Catalog.Product>();
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-11">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2 text-primary fw-bold mb-1">
+                    <i class="bi bi-flower1 me-2"></i>@(isEdit ? "Edit Bouquet Recipe" : "Create Bouquet Recipe")
+                </h1>
+                <p class="text-muted mb-0">Configure components, flowers, wrapping paper, ribbons, labor, and waste margins.</p>
+            </div>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Recipes
+            </a>
+        </div>
+
+        <form asp-action="Manage" method="post" id="recipeForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="Version" />
+
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger shadow-sm" role="alert"></div>
+
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="card-title mb-0 fw-semibold">Bouquet Product & Cost Policy</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="BouquetProductId" class="form-label fw-bold">Bouquet Product <span class="text-danger">*</span></label>
+                            @if (isEdit || Model.BouquetProductId > 0)
+                            {
+                                <input type="hidden" asp-for="BouquetProductId" />
+                                <input type="text" class="form-control bg-light" value="@Model.BouquetProductName (@Model.BouquetSKU)" readonly />
+                            }
+                            else
+                            {
+                                <select asp-for="BouquetProductId" class="form-select select2" required>
+                                    <option value="">-- Select Bouquet Product --</option>
+                                    @foreach (var prod in bouquetProducts)
+                                    {
+                                        <option value="@prod.Id" data-sku="@prod.SKU" data-price="@prod.UnitPrice">
+                                            @prod.Name (@prod.SKU) - Price: $@prod.UnitPrice.ToString("F2")
+                                        </option>
+                                    }
+                                </select>
+                                <span asp-validation-for="BouquetProductId" class="text-danger small"></span>
+                            }
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="LaborCost" class="form-label fw-bold">Labor Cost ($)</label>
+                            <input asp-for="LaborCost" class="form-control cost-input" type="number" step="0.01" min="0" />
+                            <span asp-validation-for="LaborCost" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="PackagingCost" class="form-label fw-bold">Packaging Cost ($)</label>
+                            <input asp-for="PackagingCost" class="form-control cost-input" type="number" step="0.01" min="0" />
+                            <span asp-validation-for="PackagingCost" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="Instructions" class="form-label">Arrangement & Assembly Instructions</label>
+                            <textarea asp-for="Instructions" class="form-control" rows="2" placeholder="e.g. Spiral stem arrangement, outer wrap with Kraft paper, satin ribbon knot"></textarea>
+                            <span asp-validation-for="Instructions" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="SnapshotNotes" class="form-label">Snapshot Version Notes</label>
+                            <textarea asp-for="SnapshotNotes" class="form-control" rows="2" placeholder="e.g. Updated Mother's Day edition with 2 extra roses"></textarea>
+                            <span asp-validation-for="SnapshotNotes" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input asp-for="IsActive" class="form-check-input" type="checkbox" id="isActiveSwitch" />
+                                <label class="form-check-label fw-semibold" for="isActiveSwitch">Recipe is Active</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recipe Components (BOM) Table -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title mb-0 fw-semibold">Recipe Components (Bill of Materials)</h5>
+                        <small class="text-muted">Add flowers, wrapping, ribbons, vases, or accessories with required quantities & waste margins.</small>
+                    </div>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="btnAddComponent">
+                        <i class="bi bi-plus-circle me-1"></i> Add Component
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="componentsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 35%;">Component Product</th>
+                                    <th style="width: 15%;">Quantity Required</th>
+                                    <th style="width: 15%;">Waste Margin (%)</th>
+                                    <th style="width: 15%;">Unit Cost</th>
+                                    <th style="width: 15%;">Est. Item Cost</th>
+                                    <th style="width: 5%;" class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="componentsContainer">
+                                @if (Model.Items != null && Model.Items.Count > 0)
+                                {
+                                    for (int i = 0; i < Model.Items.Count; i++)
+                                    {
+                                        <tr class="component-row" data-index="@i">
+                                            <td>
+                                                <select name="Items[@i].ComponentProductId" class="form-select component-select" required>
+                                                    <option value="">-- Select Component --</option>
+                                                    @foreach (var comp in componentProducts)
+                                                    {
+                                                        var isSelected = comp.Id == Model.Items[i].ComponentProductId;
+                                                        var compCost = comp.CurrentAverageCost > 0 ? comp.CurrentAverageCost : comp.UnitPrice;
+                                                        <option value="@comp.Id" 
+                                                                data-sku="@comp.SKU" 
+                                                                data-cost="@compCost" 
+                                                                data-unit="@(comp.UnitOfMeasure?.Symbol ?? "pcs")"
+                                                                selected="@(isSelected ? "selected" : null)">
+                                                            @comp.Name (@comp.SKU) [@(comp.UnitOfMeasure?.Symbol ?? "pcs")] - Cost: $@compCost.ToString("F2")
+                                                        </option>
+                                                    }
+                                                </select>
+                                                <input type="hidden" name="Items[@i].ComponentProductName" value="@Model.Items[i].ComponentProductName" class="component-name-hidden" />
+                                                <input type="hidden" name="Items[@i].UnitSymbol" value="@Model.Items[i].UnitSymbol" class="unit-symbol-hidden" />
+                                            </td>
+                                            <td>
+                                                <div class="input-group">
+                                                    <input type="number" step="0.0001" min="0.0001" name="Items[@i].QuantityRequired" value="@Model.Items[i].QuantityRequired" class="form-control qty-input" required />
+                                                    <span class="input-group-text unit-badge">@(Model.Items[i].UnitSymbol ?? "pcs")</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="input-group">
+                                                    <input type="number" step="0.01" min="0" max="100" name="Items[@i].WasteMarginPercentage" value="@Model.Items[i].WasteMarginPercentage" class="form-control waste-input" />
+                                                    <span class="input-group-text">%</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="fw-semibold unit-cost-text">$@Model.Items[i].UnitCost.ToString("F2")</span>
+                                                <input type="hidden" name="Items[@i].UnitCost" value="@Model.Items[i].UnitCost" class="unit-cost-input" />
+                                            </td>
+                                            <td>
+                                                <span class="fw-bold text-dark item-total-text">$@Model.Items[i].EstimatedItemCost.ToString("F2")</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <button type="button" class="btn btn-sm btn-outline-danger btn-remove-row" title="Remove Component">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer bg-light py-3">
+                    <div class="row align-items-center text-center text-md-end">
+                        <div class="col-md-3 text-md-start">
+                            <span class="text-muted small">Total Components:</span>
+                            <span class="fw-bold ms-1" id="totalComponentsCount">@(Model.Items?.Count ?? 0)</span>
+                        </div>
+                        <div class="col-md-3">
+                            <span class="text-muted small">Components Cost:</span>
+                            <span class="fw-bold ms-1" id="componentsCostSubtotal">$0.00</span>
+                        </div>
+                        <div class="col-md-3">
+                            <span class="text-muted small">Labor & Packaging:</span>
+                            <span class="fw-bold ms-1" id="laborPackagingSubtotal">$0.00</span>
+                        </div>
+                        <div class="col-md-3">
+                            <span class="text-muted small">Estimated Unit Cost:</span>
+                            <span class="h4 fw-bold text-primary mb-0 ms-1" id="grandEstimatedCost">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mb-5">
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                    <i class="bi bi-check2-circle me-1"></i> Save Recipe & Preserve Snapshot
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Component Row Template for Dynamic Addition -->
+<template id="rowTemplate">
+    <tr class="component-row" data-index="__INDEX__">
+        <td>
+            <select name="Items[__INDEX__].ComponentProductId" class="form-select component-select" required>
+                <option value="">-- Select Component --</option>
+                @foreach (var comp in componentProducts)
+                {
+                    var compCost = comp.CurrentAverageCost > 0 ? comp.CurrentAverageCost : comp.UnitPrice;
+                    <option value="@comp.Id" 
+                            data-sku="@comp.SKU" 
+                            data-cost="@compCost" 
+                            data-unit="@(comp.UnitOfMeasure?.Symbol ?? "pcs")">
+                        @comp.Name (@comp.SKU) [@(comp.UnitOfMeasure?.Symbol ?? "pcs")] - Cost: $@compCost.ToString("F2")
+                    </option>
+                }
+            </select>
+            <input type="hidden" name="Items[__INDEX__].ComponentProductName" value="" class="component-name-hidden" />
+            <input type="hidden" name="Items[__INDEX__].UnitSymbol" value="pcs" class="unit-symbol-hidden" />
+        </td>
+        <td>
+            <div class="input-group">
+                <input type="number" step="0.0001" min="0.0001" name="Items[__INDEX__].QuantityRequired" value="1" class="form-control qty-input" required />
+                <span class="input-group-text unit-badge">pcs</span>
+            </div>
+        </td>
+        <td>
+            <div class="input-group">
+                <input type="number" step="0.01" min="0" max="100" name="Items[__INDEX__].WasteMarginPercentage" value="0" class="form-control waste-input" />
+                <span class="input-group-text">%</span>
+            </div>
+        </td>
+        <td>
+            <span class="fw-semibold unit-cost-text">$0.00</span>
+            <input type="hidden" name="Items[__INDEX__].UnitCost" value="0" class="unit-cost-input" />
+        </td>
+        <td>
+            <span class="fw-bold text-dark item-total-text">$0.00</span>
+        </td>
+        <td class="text-center">
+            <button type="button" class="btn btn-sm btn-outline-danger btn-remove-row" title="Remove Component">
+                <i class="bi bi-trash"></i>
+            </button>
+        </td>
+    </tr>
+</template>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const container = document.getElementById('componentsContainer');
+            const template = document.getElementById('rowTemplate');
+            const btnAdd = document.getElementById('btnAddComponent');
+
+            function recalculateTotals() {
+                let compTotal = 0;
+                let count = 0;
+
+                const rows = container.querySelectorAll('.component-row');
+                rows.forEach(row => {
+                    count++;
+                    const select = row.querySelector('.component-select');
+                    const qtyInput = row.querySelector('.qty-input');
+                    const wasteInput = row.querySelector('.waste-input');
+                    const unitCostText = row.querySelector('.unit-cost-text');
+                    const unitCostInput = row.querySelector('.unit-cost-input');
+                    const itemTotalText = row.querySelector('.item-total-text');
+                    const unitBadge = row.querySelector('.unit-badge');
+
+                    const selectedOption = select.selectedOptions[0];
+                    let unitCost = 0;
+                    let unitSymbol = 'pcs';
+
+                    if (selectedOption && selectedOption.value) {
+                        unitCost = parseFloat(selectedOption.getAttribute('data-cost') || '0');
+                        unitSymbol = selectedOption.getAttribute('data-unit') || 'pcs';
+                        row.querySelector('.component-name-hidden').value = selectedOption.text.split('(')[0].trim();
+                        row.querySelector('.unit-symbol-hidden').value = unitSymbol;
+                    }
+
+                    unitBadge.textContent = unitSymbol;
+                    unitCostText.textContent = '$' + unitCost.toFixed(2);
+                    unitCostInput.value = unitCost;
+
+                    const qty = parseFloat(qtyInput.value || '0');
+                    const waste = parseFloat(wasteInput.value || '0');
+                    const effectiveQty = qty * (1 + (waste / 100));
+                    const lineCost = effectiveQty * unitCost;
+
+                    itemTotalText.textContent = '$' + lineCost.toFixed(2);
+                    compTotal += lineCost;
+                });
+
+                const labor = parseFloat(document.getElementById('LaborCost').value || '0');
+                const packaging = parseFloat(document.getElementById('PackagingCost').value || '0');
+                const laborPackTotal = labor + packaging;
+                const grandTotal = compTotal + laborPackTotal;
+
+                document.getElementById('totalComponentsCount').textContent = count;
+                document.getElementById('componentsCostSubtotal').textContent = '$' + compTotal.toFixed(2);
+                document.getElementById('laborPackagingSubtotal').textContent = '$' + laborPackTotal.toFixed(2);
+                document.getElementById('grandEstimatedCost').textContent = '$' + grandTotal.toFixed(2);
+            }
+
+            function reindexRows() {
+                const rows = container.querySelectorAll('.component-row');
+                rows.forEach((row, idx) => {
+                    row.setAttribute('data-index', idx);
+                    row.querySelectorAll('select, input').forEach(input => {
+                        const name = input.getAttribute('name');
+                        if (name) {
+                            input.setAttribute('name', name.replace(/Items\[\d+\]/, 'Items[' + idx + ']'));
+                        }
+                    });
+                });
+                recalculateTotals();
+            }
+
+            btnAdd.addEventListener('click', function () {
+                const newIndex = container.querySelectorAll('.component-row').length;
+                let html = template.innerHTML.replace(/__INDEX__/g, newIndex);
+                const tempDiv = document.createElement('tbody');
+                tempDiv.innerHTML = html;
+                const newRow = tempDiv.firstElementChild;
+                container.appendChild(newRow);
+                reindexRows();
+            });
+
+            container.addEventListener('click', function (e) {
+                if (e.target.closest('.btn-remove-row')) {
+                    const row = e.target.closest('.component-row');
+                    row.remove();
+                    reindexRows();
+                }
+            });
+
+            container.addEventListener('change', function (e) {
+                if (e.target.matches('.component-select, .qty-input, .waste-input')) {
+                    recalculateTotals();
+                }
+            });
+
+            container.addEventListener('input', function (e) {
+                if (e.target.matches('.qty-input, .waste-input')) {
+                    recalculateTotals();
+                }
+            });
+
+            document.querySelectorAll('.cost-input').forEach(input => {
+                input.addEventListener('input', recalculateTotals);
+            });
+
+            // If empty on initial create, add 1 empty row
+            if (container.querySelectorAll('.component-row').length === 0) {
+                btnAdd.click();
+            } else {
+                recalculateTotals();
+            }
+        });
+    </script>
+}

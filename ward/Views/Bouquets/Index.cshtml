@@ -1,0 +1,177 @@
+@model IEnumerable<ward.Models.Production.BouquetRecipeListItemViewModel>
+
+@{
+    ViewData["Title"] = "Bouquet Recipes (Bill of Materials)";
+    var recipeList = Model?.ToList() ?? new List<ward.Models.Production.BouquetRecipeListItemViewModel>();
+    var totalRecipes = recipeList.Count;
+    var activeRecipes = recipeList.Count(r => r.IsActive);
+    var avgMargin = totalRecipes > 0 ? recipeList.Average(r => r.GrossMargin) : 0;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+        <h1 class="h2 text-primary fw-bold mb-1">
+            <i class="bi bi-flower1 me-2"></i>Bouquet Recipes & BOM
+        </h1>
+        <p class="text-muted mb-0">Manage Bill of Materials (BOM), cost policies, waste margins, and stock assembly for flower bouquets.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Assemble" class="btn btn-outline-success">
+            <i class="bi bi-box-seam me-1"></i> Assemble Bouquets
+        </a>
+        <a asp-action="Manage" class="btn btn-primary shadow-sm">
+            <i class="bi bi-plus-circle me-1"></i> Create Recipe
+        </a>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Summary Stats Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 border-start border-primary border-4">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold">Configured Recipes</div>
+                <div class="h3 fw-bold text-dark mb-0">@totalRecipes <span class="badge bg-light text-secondary fs-6 fw-normal">(@activeRecipes active)</span></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 border-start border-success border-4">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold">Average Production Margin</div>
+                <div class="h3 fw-bold text-success mb-0">@avgMargin.ToString("F1")%</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 border-start border-info border-4">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold">Stock Conversion Status</div>
+                <div class="h3 fw-bold text-info mb-0">Ready for Assembly</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3">
+        <h5 class="card-title mb-0 fw-semibold">Configured Bouquet Recipes</h5>
+    </div>
+    <div class="card-body p-0">
+        @if (!recipeList.Any())
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-basket3 display-4 mb-3 d-block text-secondary opacity-50"></i>
+                <h5 class="fw-bold">No bouquet recipes created yet</h5>
+                <p>Define components (flowers, wrapping, ribbons) to calculate costs and prepare for assembly.</p>
+                <a asp-action="Manage" class="btn btn-primary mt-2">
+                    <i class="bi bi-plus-lg me-1"></i> Add First Recipe
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Bouquet Product</th>
+                            <th>SKU</th>
+                            <th>Components</th>
+                            <th>Estimated Unit Cost</th>
+                            <th>Selling Price</th>
+                            <th>Margin</th>
+                            <th>Version</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in recipeList)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-bold text-dark">@item.BouquetProductName</div>
+                                    <div class="text-muted small">Updated: @(item.UpdatedAtUtc?.ToString("yyyy-MM-dd HH:mm") ?? "-")</div>
+                                </td>
+                                <td><code class="text-secondary fw-semibold">@item.BouquetSKU</code></td>
+                                <td>
+                                    <span class="badge bg-secondary">@item.ComponentCount items</span>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-dark">$@item.EstimatedCost.ToString("F2")</span>
+                                </td>
+                                <td>$@item.SellingPrice.ToString("F2")</td>
+                                <td>
+                                    @if (item.GrossMargin >= 40)
+                                    {
+                                        <span class="badge bg-success">@item.GrossMargin.ToString("F1")%</span>
+                                    }
+                                    else if (item.GrossMargin >= 20)
+                                    {
+                                        <span class="badge bg-warning text-dark">@item.GrossMargin.ToString("F1")%</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">@item.GrossMargin.ToString("F1")%</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">v@item.Version</span>
+                                </td>
+                                <td>
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Inactive</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-action="Calculate" asp-route-bouquetProductId="@item.BouquetProductId" class="btn btn-outline-info" title="Requirements & Cost Calculator">
+                                            <i class="bi bi-calculator me-1"></i> Calculate
+                                        </a>
+                                        <a asp-action="Assemble" asp-route-bouquetProductId="@item.BouquetProductId" class="btn btn-outline-success" title="Assemble Bouquet Stock">
+                                            <i class="bi bi-box-seam me-1"></i> Assemble
+                                        </a>
+                                        <a asp-action="Manage" asp-route-id="@item.RecipeId" class="btn btn-outline-primary" title="Edit Recipe">
+                                            <i class="bi bi-pencil me-1"></i> Edit
+                                        </a>
+                                        <a asp-action="Snapshots" asp-route-bouquetProductId="@item.BouquetProductId" class="btn btn-outline-secondary" title="View Version Snapshots">
+                                            <i class="bi bi-clock-history me-1"></i> History
+                                        </a>
+                                    </div>
+                                    <form asp-action="Delete" asp-route-id="@item.RecipeId" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this recipe? Existing historical snapshots will be preserved.');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-outline-danger ms-1" title="Delete Recipe">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

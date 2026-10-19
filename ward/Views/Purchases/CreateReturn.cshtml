@@ -1,0 +1,189 @@
+@model ward.Models.Purchasing.PurchaseReturnCreateViewModel
+
+@{
+    ViewData["Title"] = $"Issue Purchase Return - {Model.InvoiceNumber}";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-11">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2 text-warning fw-bold mb-1">
+                    <i class="bi bi-arrow-return-left me-2"></i>Issue Purchase Return
+                </h1>
+                <p class="text-muted mb-0">Return goods from invoice <strong>@Model.InvoiceNumber</strong> to <strong>@Model.SupplierName</strong>.</p>
+            </div>
+            <a asp-action="Details" asp-route-id="@Model.PurchaseInvoiceId" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Invoice
+            </a>
+        </div>
+
+        <form asp-action="CreateReturn" method="post" id="returnForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="PurchaseInvoiceId" />
+            <input type="hidden" asp-for="SupplierId" />
+            <input type="hidden" asp-for="WarehouseId" />
+            <input type="hidden" asp-for="InvoiceNumber" />
+            <input type="hidden" asp-for="SupplierName" />
+            <input type="hidden" asp-for="WarehouseName" />
+            <input type="hidden" asp-for="IdempotencyToken" />
+
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger shadow-sm" role="alert"></div>
+
+            <!-- Parameters Card -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="card-title mb-0 fw-semibold">Return Parameters</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label asp-for="ReturnNumber" class="form-label fw-bold">Return Reference # <span class="text-danger">*</span></label>
+                            <input asp-for="ReturnNumber" class="form-control" required />
+                            <span asp-validation-for="ReturnNumber" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="ReturnDate" class="form-label fw-bold">Return Date <span class="text-danger">*</span></label>
+                            <input asp-for="ReturnDate" type="date" class="form-control" required />
+                            <span asp-validation-for="ReturnDate" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="Reason" class="form-label fw-bold">Return Reason <span class="text-danger">*</span></label>
+                            <input asp-for="Reason" class="form-control" placeholder="e.g. Wilting blooms, damaged packaging, incorrect color" required />
+                            <span asp-validation-for="Reason" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Notes" class="form-label">Additional Return Notes</label>
+                            <textarea asp-for="Notes" class="form-control" rows="2" placeholder="Optional supplier communication or driver credit note reference"></textarea>
+                            <span asp-validation-for="Notes" class="text-danger small"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Items Table Card -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="card-title mb-0 fw-semibold">Return Quantities & Disposition</h5>
+                    <small class="text-muted">Enter quantities to return. Cannot exceed eligible purchased quantity.</small>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 25%;">Product</th>
+                                    <th class="text-center" style="width: 12%;">Purchased</th>
+                                    <th class="text-center" style="width: 12%;">Prev. Returned</th>
+                                    <th class="text-center" style="width: 12%;">Eligible</th>
+                                    <th style="width: 14%;">Return Qty</th>
+                                    <th style="width: 15%;">Disposition</th>
+                                    <th class="text-end" style="width: 10%;">Refund Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < Model.Items.Count; i++)
+                                {
+                                    var it = Model.Items[i];
+                                    <tr class="return-item-row">
+                                        <td>
+                                            <input type="hidden" name="Items[@i].PurchaseInvoiceItemId" value="@it.PurchaseInvoiceItemId" />
+                                            <input type="hidden" name="Items[@i].ProductId" value="@it.ProductId" />
+                                            <input type="hidden" name="Items[@i].ProductName" value="@it.ProductName" />
+                                            <input type="hidden" name="Items[@i].ProductSKU" value="@it.ProductSKU" />
+                                            <input type="hidden" name="Items[@i].UnitSymbol" value="@it.UnitSymbol" />
+                                            <input type="hidden" name="Items[@i].PurchasedQuantity" value="@it.PurchasedQuantity" />
+                                            <input type="hidden" name="Items[@i].AlreadyReturnedQuantity" value="@it.AlreadyReturnedQuantity" />
+                                            <input type="hidden" name="Items[@i].EligibleQuantity" value="@it.EligibleQuantity" class="eligible-qty" />
+                                            <input type="hidden" name="Items[@i].UnitCost" value="@it.UnitCost" class="unit-cost" />
+
+                                            <div class="fw-bold text-dark">@it.ProductName</div>
+                                            <div class="text-muted small"><code>@it.ProductSKU</code> - Cost: $@it.UnitCost.ToString("F2")</div>
+                                        </td>
+                                        <td class="text-center">@it.PurchasedQuantity.ToString("G29") @it.UnitSymbol</td>
+                                        <td class="text-center text-muted">@it.AlreadyReturnedQuantity.ToString("G29")</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-light text-dark border">
+                                                @it.EligibleQuantity.ToString("G29") @it.UnitSymbol
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="input-group">
+                                                <input type="number" 
+                                                       step="0.0001" 
+                                                       min="0" 
+                                                       max="@it.EligibleQuantity" 
+                                                       name="Items[@i].ReturnQuantity" 
+                                                       value="0" 
+                                                       class="form-control return-qty-input fw-bold" 
+                                                       @(it.EligibleQuantity <= 0 ? "disabled" : "") />
+                                                <span class="input-group-text">@it.UnitSymbol</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <select name="Items[@i].Disposition" class="form-select form-select-sm">
+                                                <option value="Restocked">Restocked (Returned to Vendor)</option>
+                                                <option value="Discarded">Discarded (Damaged/Spoiled Goods)</option>
+                                            </select>
+                                        </td>
+                                        <td class="text-end fw-bold line-refund-text">$0.00</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer bg-light py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted small">Total Refund Credited to Supplier Balance:</span>
+                        <span class="h4 fw-bold text-danger mb-0" id="totalRefundText">$0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mb-5">
+                <a asp-action="Details" asp-route-id="@Model.PurchaseInvoiceId" class="btn btn-outline-secondary">Cancel</a>
+                <button type="submit" class="btn btn-warning px-4 text-dark shadow-sm" id="btnSubmitReturn">
+                    <i class="bi bi-arrow-return-left me-1"></i> Process Return & Deduct Stock
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const rows = document.querySelectorAll('.return-item-row');
+            const totalRefundText = document.getElementById('totalRefundText');
+
+            function recalculateRefund() {
+                let total = 0;
+                rows.forEach(row => {
+                    const qtyInput = row.querySelector('.return-qty-input');
+                    const costInput = row.querySelector('.unit-cost');
+                    const lineText = row.querySelector('.line-refund-text');
+
+                    const qty = parseFloat(qtyInput?.value || '0');
+                    const cost = parseFloat(costInput?.value || '0');
+                    const lineTotal = qty * cost;
+
+                    if (lineText) {
+                        lineText.textContent = '$' + lineTotal.toFixed(2);
+                    }
+                    total += lineTotal;
+                });
+
+                totalRefundText.textContent = '$' + total.toFixed(2);
+            }
+
+            document.querySelectorAll('.return-qty-input').forEach(input => {
+                input.addEventListener('input', recalculateRefund);
+            });
+        });
+    </script>
+}

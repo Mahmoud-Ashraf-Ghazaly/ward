@@ -1,0 +1,65 @@
+@model ward.Models.Inventory.AdjustStockViewModel
+@{
+    ViewData["Title"] = "Stock Balance Adjustment";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h4 class="mb-0 fw-bold text-dark">⚖ Stock Balance Adjustment</h4>
+                <a asp-action="Index" class="btn btn-sm btn-outline-secondary">Cancel</a>
+            </div>
+            <div class="card-body p-4">
+                <div class="alert alert-info py-2 small mb-4" role="alert">
+                    <strong>Audit Notice:</strong> Adjustments modify the physical stock balance directly and record an adjustment audit movement.
+                </div>
+
+                <form asp-action="Adjust" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="IdempotencyToken" />
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-7">
+                            <label asp-for="ProductId" class="form-label fw-semibold">Product *</label>
+                            <select asp-for="ProductId" class="form-select" asp-items="ViewBag.Products" autofocus>
+                                <option value="">-- Select Product --</option>
+                            </select>
+                            <span asp-validation-for="ProductId" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-5">
+                            <label asp-for="WarehouseId" class="form-label fw-semibold">Warehouse *</label>
+                            <select asp-for="WarehouseId" class="form-select" asp-items="ViewBag.Warehouses">
+                                <option value="">-- Select Warehouse --</option>
+                            </select>
+                            <span asp-validation-for="WarehouseId" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="NewQuantityOnHand" class="form-label fw-semibold">New Counted Quantity on Hand *</label>
+                        <input asp-for="NewQuantityOnHand" class="form-control font-monospace" type="number" step="any" min="0" placeholder="0" />
+                        <div class="form-text">Enter the verified physical quantity. The variance difference will be calculated and posted automatically.</div>
+                        <span asp-validation-for="NewQuantityOnHand" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Reason" class="form-label fw-semibold">Adjustment Reason & Justification *</label>
+                        <textarea asp-for="Reason" class="form-control" rows="3" placeholder="e.g. End of month physical inventory count audit; found +2 stems under display shelf"></textarea>
+                        <span asp-validation-for="Reason" class="text-danger small"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a asp-action="Index" class="btn btn-outline-secondary">Back to Stock</a>
+                        <button type="submit" class="btn btn-secondary px-4">Post Stock Adjustment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

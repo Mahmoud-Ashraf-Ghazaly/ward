@@ -1,0 +1,342 @@
+@model ward.Models.Purchasing.PurchaseInvoiceCreateViewModel
+
+@{
+    ViewData["Title"] = "New Purchase Invoice";
+    var suppliers = ViewBag.Suppliers as List<ward.Models.Purchasing.SupplierListItemViewModel> ?? new List<ward.Models.Purchasing.SupplierListItemViewModel>();
+    var warehouses = ViewBag.Warehouses as List<ward.Models.Inventory.WarehouseListItemViewModel> ?? new List<ward.Models.Inventory.WarehouseListItemViewModel>();
+    var products = ViewBag.Products as List<ward.Models.Catalog.ProductListItemViewModel> ?? new List<ward.Models.Catalog.ProductListItemViewModel>();
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-11">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2 text-primary fw-bold mb-1">
+                    <i class="bi bi-cart-plus me-2"></i>Create Purchase Invoice
+                </h1>
+                <p class="text-muted mb-0">Record incoming stock from suppliers, update costs, and calculate tax and balances.</p>
+            </div>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Invoices
+            </a>
+        </div>
+
+        <form asp-action="Create" method="post" id="purchaseInvoiceForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="IdempotencyToken" />
+
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger shadow-sm" role="alert"></div>
+
+            <!-- Header Info Card -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="card-title mb-0 fw-semibold">Invoice Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label asp-for="InvoiceNumber" class="form-label fw-bold">Invoice Number <span class="text-danger">*</span></label>
+                            <input asp-for="InvoiceNumber" class="form-control" required />
+                            <span asp-validation-for="InvoiceNumber" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="SupplierInvoiceNumber" class="form-label">Vendor Reference / Bill #</label>
+                            <input asp-for="SupplierInvoiceNumber" class="form-control" placeholder="e.g. VEN-99482" />
+                            <span asp-validation-for="SupplierInvoiceNumber" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="SupplierId" class="form-label fw-bold">Supplier <span class="text-danger">*</span></label>
+                            <select asp-for="SupplierId" class="form-select" required>
+                                <option value="">-- Select Supplier --</option>
+                                @foreach (var s in suppliers)
+                                {
+                                    <option value="@s.Id">@s.Name (Balance: $@s.CurrentBalance.ToString("F2"))</option>
+                                }
+                            </select>
+                            <span asp-validation-for="SupplierId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="WarehouseId" class="form-label fw-bold">Destination Warehouse <span class="text-danger">*</span></label>
+                            <select asp-for="WarehouseId" class="form-select" required>
+                                <option value="">-- Select Receiving Warehouse --</option>
+                                @foreach (var w in warehouses)
+                                {
+                                    <option value="@w.Id" selected="@(w.IsDefault ? "selected" : null)">@w.Name (@w.Code)</option>
+                                }
+                            </select>
+                            <span asp-validation-for="WarehouseId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="InvoiceDate" class="form-label fw-bold">Invoice Date <span class="text-danger">*</span></label>
+                            <input asp-for="InvoiceDate" type="date" class="form-control" required />
+                            <span asp-validation-for="InvoiceDate" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="DueDate" class="form-label">Payment Due Date</label>
+                            <input asp-for="DueDate" type="date" class="form-control" />
+                            <span asp-validation-for="DueDate" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="TaxRatePercentage" class="form-label fw-bold">Tax Rate (%)</label>
+                            <div class="input-group">
+                                <input asp-for="TaxRatePercentage" type="number" step="0.01" min="0" max="100" class="form-control" id="taxRateInput" />
+                                <span class="input-group-text">%</span>
+                            </div>
+                            <span asp-validation-for="TaxRatePercentage" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="DiscountAmount" class="form-label fw-bold">Global Discount ($)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input asp-for="DiscountAmount" type="number" step="0.01" min="0" class="form-control" id="globalDiscountInput" />
+                            </div>
+                            <span asp-validation-for="DiscountAmount" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-9">
+                            <label asp-for="Notes" class="form-label">Notes & Delivery References</label>
+                            <input asp-for="Notes" class="form-control" placeholder="e.g. Delivered via airfreight cold chain, Batch #498" />
+                            <span asp-validation-for="Notes" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-3 d-flex align-items-center mt-4">
+                            <div class="form-check form-switch pt-2">
+                                <input asp-for="PostImmediately" class="form-check-input" type="checkbox" id="postSwitch" checked />
+                                <label class="form-check-label fw-semibold" for="postSwitch">Post & Increase Stock Immediately</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Items Table Card -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title mb-0 fw-semibold">Purchased Items & Flowers</h5>
+                        <small class="text-muted">Specify products, received quantities, and unit purchase costs.</small>
+                    </div>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="btnAddItem">
+                        <i class="bi bi-plus-circle me-1"></i> Add Line Item
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="itemsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 35%;">Product</th>
+                                    <th style="width: 15%;">Quantity</th>
+                                    <th style="width: 15%;">Unit Cost ($)</th>
+                                    <th style="width: 15%;">Line Discount ($)</th>
+                                    <th style="width: 15%;" class="text-end">Line Total ($)</th>
+                                    <th style="width: 5%;" class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="itemsContainer">
+                                <!-- Populated dynamically by javascript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer bg-light py-3">
+                    <div class="row align-items-center text-center text-md-end g-2">
+                        <div class="col-md-3 text-md-start">
+                            <span class="text-muted small">Items Count:</span>
+                            <span class="fw-bold ms-1" id="itemsCountText">0</span>
+                        </div>
+                        <div class="col-md-3">
+                            <span class="text-muted small">SubTotal:</span>
+                            <span class="fw-bold ms-1" id="subTotalText">$0.00</span>
+                        </div>
+                        <div class="col-md-3">
+                            <span class="text-muted small">Tax:</span>
+                            <span class="fw-bold ms-1" id="taxAmountText">$0.00</span>
+                        </div>
+                        <div class="col-md-3">
+                            <span class="text-muted small">Grand Total:</span>
+                            <span class="h4 fw-bold text-primary mb-0 ms-1" id="grandTotalText">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mb-5">
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary px-4 shadow-sm" id="btnSubmit">
+                    <i class="bi bi-check2-circle me-1"></i> Save Invoice
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Template for Dynamic Line Row -->
+<template id="itemRowTemplate">
+    <tr class="item-row" data-index="__INDEX__">
+        <td>
+            <select name="Items[__INDEX__].ProductId" class="form-select product-select" required>
+                <option value="">-- Select Product --</option>
+                @foreach (var p in products)
+                {
+                    <option value="@p.Id" 
+                            data-sku="@p.SKU" 
+                            data-cost="@p.CurrentAverageCost" 
+                            data-unit="@p.UnitOfMeasureSymbol">
+                        @p.Name (@p.SKU) [@p.UnitOfMeasureSymbol]
+                    </option>
+                }
+            </select>
+            <input type="hidden" name="Items[__INDEX__].ProductName" value="" class="product-name-hidden" />
+            <input type="hidden" name="Items[__INDEX__].UnitSymbol" value="" class="unit-symbol-hidden" />
+        </td>
+        <td>
+            <div class="input-group">
+                <input type="number" step="0.0001" min="0.0001" name="Items[__INDEX__].Quantity" value="1" class="form-control qty-input" required />
+                <span class="input-group-text unit-badge">pcs</span>
+            </div>
+        </td>
+        <td>
+            <div class="input-group">
+                <span class="input-group-text">$</span>
+                <input type="number" step="0.01" min="0" name="Items[__INDEX__].UnitCost" value="0.00" class="form-control cost-input" required />
+            </div>
+        </td>
+        <td>
+            <div class="input-group">
+                <span class="input-group-text">$</span>
+                <input type="number" step="0.01" min="0" name="Items[__INDEX__].DiscountAmount" value="0.00" class="form-control disc-input" />
+            </div>
+        </td>
+        <td class="text-end">
+            <span class="fw-bold text-dark line-total-text">$0.00</span>
+        </td>
+        <td class="text-center">
+            <button type="button" class="btn btn-sm btn-outline-danger btn-remove-row" title="Remove Item">
+                <i class="bi bi-trash"></i>
+            </button>
+        </td>
+    </tr>
+</template>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const container = document.getElementById('itemsContainer');
+            const template = document.getElementById('itemRowTemplate');
+            const btnAdd = document.getElementById('btnAddItem');
+            const taxRateInput = document.getElementById('taxRateInput');
+            const globalDiscountInput = document.getElementById('globalDiscountInput');
+
+            function recalculateTotals() {
+                let subTotal = 0;
+                let count = 0;
+
+                const rows = container.querySelectorAll('.item-row');
+                rows.forEach(row => {
+                    count++;
+                    const select = row.querySelector('.product-select');
+                    const qtyInput = row.querySelector('.qty-input');
+                    const costInput = row.querySelector('.cost-input');
+                    const discInput = row.querySelector('.disc-input');
+                    const lineTotalText = row.querySelector('.line-total-text');
+                    const unitBadge = row.querySelector('.unit-badge');
+
+                    const selectedOption = select.selectedOptions[0];
+                    let unitSymbol = 'pcs';
+                    if (selectedOption && selectedOption.value) {
+                        unitSymbol = selectedOption.getAttribute('data-unit') || 'pcs';
+                        row.querySelector('.product-name-hidden').value = selectedOption.text.split('(')[0].trim();
+                        row.querySelector('.unit-symbol-hidden').value = unitSymbol;
+                    }
+                    unitBadge.textContent = unitSymbol;
+
+                    const qty = parseFloat(qtyInput.value || '0');
+                    const cost = parseFloat(costInput.value || '0');
+                    const disc = parseFloat(discInput.value || '0');
+                    const lineTotal = Math.max(0, (qty * cost) - disc);
+
+                    lineTotalText.textContent = '$' + lineTotal.toFixed(2);
+                    subTotal += lineTotal;
+                });
+
+                const globalDiscount = parseFloat(globalDiscountInput.value || '0');
+                const taxableSubtotal = Math.max(0, subTotal - globalDiscount);
+                const taxRate = parseFloat(taxRateInput.value || '0');
+                const taxAmount = taxableSubtotal * (taxRate / 100);
+                const grandTotal = taxableSubtotal + taxAmount;
+
+                document.getElementById('itemsCountText').textContent = count;
+                document.getElementById('subTotalText').textContent = '$' + subTotal.toFixed(2);
+                document.getElementById('taxAmountText').textContent = '$' + taxAmount.toFixed(2);
+                document.getElementById('grandTotalText').textContent = '$' + grandTotal.toFixed(2);
+            }
+
+            function reindexRows() {
+                const rows = container.querySelectorAll('.item-row');
+                rows.forEach((row, idx) => {
+                    row.setAttribute('data-index', idx);
+                    row.querySelectorAll('select, input').forEach(input => {
+                        const name = input.getAttribute('name');
+                        if (name) {
+                            input.setAttribute('name', name.replace(/Items\[\d+\]/, 'Items[' + idx + ']'));
+                        }
+                    });
+                });
+                recalculateTotals();
+            }
+
+            btnAdd.addEventListener('click', function () {
+                const newIndex = container.querySelectorAll('.item-row').length;
+                let html = template.innerHTML.replace(/__INDEX__/g, newIndex);
+                const tempTbody = document.createElement('tbody');
+                tempTbody.innerHTML = html;
+                const newRow = tempTbody.firstElementChild;
+                container.appendChild(newRow);
+                reindexRows();
+            });
+
+            container.addEventListener('click', function (e) {
+                if (e.target.closest('.btn-remove-row')) {
+                    const row = e.target.closest('.item-row');
+                    row.remove();
+                    reindexRows();
+                }
+            });
+
+            container.addEventListener('change', function (e) {
+                if (e.target.matches('.product-select')) {
+                    const selected = e.target.selectedOptions[0];
+                    if (selected && selected.value) {
+                        const cost = selected.getAttribute('data-cost');
+                        const row = e.target.closest('.item-row');
+                        if (cost && parseFloat(cost) > 0) {
+                            row.querySelector('.cost-input').value = parseFloat(cost).toFixed(2);
+                        }
+                    }
+                    recalculateTotals();
+                }
+            });
+
+            container.addEventListener('input', function (e) {
+                if (e.target.matches('.qty-input, .cost-input, .disc-input')) {
+                    recalculateTotals();
+                }
+            });
+
+            taxRateInput.addEventListener('input', recalculateTotals);
+            globalDiscountInput.addEventListener('input', recalculateTotals);
+
+            // Add 1 default row
+            btnAdd.click();
+        });
+    </script>
+}

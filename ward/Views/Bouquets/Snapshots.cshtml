@@ -1,0 +1,174 @@
+@model IEnumerable<ward.Models.Production.RecipeSnapshotDto>
+
+@{
+    ViewData["Title"] = $"Recipe Snapshots: {ViewBag.BouquetProductName}";
+    var snapshots = Model?.ToList() ?? new List<ward.Models.Production.RecipeSnapshotDto>();
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-11">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2 text-primary fw-bold mb-1">
+                    <i class="bi bi-clock-history me-2"></i>Recipe Version & Cost History
+                </h1>
+                <p class="text-muted mb-0">
+                    Historical snapshots for <strong>@ViewBag.BouquetProductName</strong>. Each snapshot preserves exact component prices, quantities, and labor costs at that point in time.
+                </p>
+            </div>
+            <div class="d-flex gap-2">
+                <a asp-action="Index" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Recipes
+                </a>
+                <a asp-action="Manage" asp-route-bouquetProductId="@ViewBag.BouquetProductId" class="btn btn-primary shadow-sm">
+                    <i class="bi bi-pencil me-1"></i> Edit Active Recipe
+                </a>
+            </div>
+        </div>
+
+        @if (!snapshots.Any())
+        {
+            <div class="card shadow-sm border-0 text-center py-5">
+                <div class="card-body">
+                    <i class="bi bi-journal-x display-4 text-muted mb-3 d-block"></i>
+                    <h5 class="fw-bold">No historical snapshots recorded yet</h5>
+                    <p class="text-muted">Snapshots are created automatically whenever a recipe is configured or updated.</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info shadow-sm mb-4">
+                <i class="bi bi-shield-check me-2 fs-5 align-middle"></i>
+                <strong>Snapshot Immutability Guarantee:</strong> Historical snapshots are permanent and immutable. Editing active recipes creates a new version snapshot and never modifies prior records.
+            </div>
+
+            <div class="accordion" id="snapshotsAccordion">
+                @for (int i = 0; i < snapshots.Count; i++)
+                {
+                    var snap = snapshots[i];
+                    var isFirst = i == 0;
+                    var collapseId = $"collapseSnap_{snap.Id}";
+                    var headingId = $"headingSnap_{snap.Id}";
+
+                    <div class="accordion-item shadow-sm border mb-3 rounded overflow-hidden">
+                        <h2 class="accordion-header" id="@headingId">
+                            <button class="accordion-button @(isFirst ? "" : "collapsed") bg-white py-3" type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId" aria-expanded="@(isFirst ? "true" : "false")" aria-controls="@collapseId">
+                                <div class="d-flex flex-wrap justify-content-between align-items-center w-100 me-3">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-primary fs-6 px-3 py-2">Version @snap.Version</span>
+                                        @if (isFirst)
+                                        {
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle">Latest</span>
+                                        }
+                                        <span class="text-dark fw-bold ms-2">Total Unit Cost: $@snap.TotalUnitCost.ToString("F2")</span>
+                                    </div>
+                                    <div class="text-muted small">
+                                        <i class="bi bi-calendar3 me-1"></i>@snap.SnapshotDateUtc.ToString("yyyy-MM-dd HH:mm:ss") UTC
+                                    </div>
+                                </div>
+                            </button>
+                        </h2>
+                        <div id="@collapseId" class="accordion-collapse collapse @(isFirst ? "show" : "")" aria-labelledby="@headingId" data-bs-parent="#snapshotsAccordion">
+                            <div class="accordion-body bg-light">
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-3">
+                                        <div class="card border-0 shadow-sm p-3 bg-white text-center">
+                                            <small class="text-muted">Components Total</small>
+                                            <div class="h5 fw-bold text-dark mb-0">$@snap.ComponentCostTotal.ToString("F2")</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card border-0 shadow-sm p-3 bg-white text-center">
+                                            <small class="text-muted">Labor Cost</small>
+                                            <div class="h5 fw-bold text-dark mb-0">$@snap.LaborCost.ToString("F2")</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card border-0 shadow-sm p-3 bg-white text-center">
+                                            <small class="text-muted">Packaging Cost</small>
+                                            <div class="h5 fw-bold text-dark mb-0">$@snap.PackagingCost.ToString("F2")</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card border-0 shadow-sm p-3 bg-white text-center border-start border-primary border-3">
+                                            <small class="text-muted">Total Unit Cost</small>
+                                            <div class="h5 fw-bold text-primary mb-0">$@snap.TotalUnitCost.ToString("F2")</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @if (!string.IsNullOrWhiteSpace(snap.Notes))
+                                {
+                                    <div class="card border-0 shadow-sm p-3 bg-white mb-3">
+                                        <div class="text-muted small fw-bold">Snapshot Notes:</div>
+                                        <div class="text-dark">@snap.Notes</div>
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(snap.ItemsSnapshotJson))
+                                {
+                                    <div class="card border-0 shadow-sm bg-white">
+                                        <div class="card-header bg-white py-2">
+                                            <span class="fw-semibold small">Preserved Component Breakdown at Version @snap.Version</span>
+                                        </div>
+                                        <div class="card-body p-0">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-hover align-middle mb-0">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th>Component Product</th>
+                                                            <th>SKU</th>
+                                                            <th class="text-center">Required Qty</th>
+                                                            <th class="text-center">Waste %</th>
+                                                            <th class="text-center">Effective Qty</th>
+                                                            <th class="text-end">Preserved Unit Cost</th>
+                                                            <th class="text-end">Line Cost</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @{
+                                                            try
+                                                            {
+                                                                using var doc = System.Text.Json.JsonDocument.Parse(snap.ItemsSnapshotJson);
+                                                                foreach (var item in doc.RootElement.EnumerateArray())
+                                                                {
+                                                                    var pName = item.GetProperty("ProductName").GetString();
+                                                                    var sku = item.GetProperty("SKU").GetString();
+                                                                    var uSymbol = item.GetProperty("UnitSymbol").GetString();
+                                                                    var qReq = item.GetProperty("QuantityRequired").GetDecimal();
+                                                                    var waste = item.GetProperty("WasteMarginPercentage").GetDecimal();
+                                                                    var effQ = item.GetProperty("EffectiveQuantity").GetDecimal();
+                                                                    var uCost = item.GetProperty("UnitCost").GetDecimal();
+                                                                    var tCost = item.GetProperty("TotalCost").GetDecimal();
+
+                                                                    <tr>
+                                                                        <td class="fw-semibold text-dark">@pName</td>
+                                                                        <td><code>@sku</code></td>
+                                                                        <td class="text-center">@qReq.ToString("G29") @uSymbol</td>
+                                                                        <td class="text-center">@(waste > 0 ? $"+{waste:F1}%" : "0%")</td>
+                                                                        <td class="text-center">@effQ.ToString("G29") @uSymbol</td>
+                                                                        <td class="text-end text-muted">$@uCost.ToString("F2")</td>
+                                                                        <td class="text-end fw-bold text-dark">$@tCost.ToString("F2")</td>
+                                                                    </tr>
+                                                                }
+                                                            }
+                                                            catch
+                                                            {
+                                                                <tr><td colspan="7" class="text-muted text-center py-2">Snapshot data available in raw JSON</td></tr>
+                                                            }
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

@@ -1,0 +1,160 @@
+@model ward.Models.Inventory.StockMovementFilterViewModel
+@{
+    ViewData["Title"] = "Stock Movement Ledger";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Stock Movement Audit Ledger</h2>
+        <p class="text-muted mb-0">Immutable chronological history of all receipts, issues, transfers, and adjustments.</p>
+    </div>
+    <div>
+        <a asp-action="Index" class="btn btn-outline-primary me-2">Back to Stock Balances</a>
+        <a asp-action="Receive" class="btn btn-primary">+ Receive Inbound Stock</a>
+    </div>
+</div>
+
+<!-- Ledger Filter -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-3">
+        <form asp-action="Movements" method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold text-muted">Warehouse</label>
+                <select name="WarehouseId" class="form-select" asp-items="ViewBag.Warehouses">
+                    <option value="">-- All Warehouses --</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold text-muted">Product</label>
+                <select name="ProductId" class="form-select" asp-items="ViewBag.Products">
+                    <option value="">-- All Products --</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold text-muted">Movement Type</label>
+                <select name="MovementType" class="form-select" asp-items="Html.GetEnumSelectList<ward.Entities.Enums.MovementType>()">
+                    <option value="">-- All Types --</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold text-muted">Reference / Search</label>
+                <input type="text" name="ReferenceQuery" value="@Model.ReferenceQuery" class="form-control" placeholder="PO, Transfer #, Notes..." />
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-dark flex-grow-1">Filter</button>
+                <a asp-action="Movements" class="btn btn-outline-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Ledger Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Date / Time (UTC)</th>
+                        <th>Product / SKU</th>
+                        <th>Warehouse</th>
+                        <th>Movement Type</th>
+                        <th class="text-end">Quantity</th>
+                        <th class="text-end">Unit Cost</th>
+                        <th class="text-end">Total Value</th>
+                        <th>Reference</th>
+                        <th class="pe-4">Notes / Operator</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Items.Any())
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-muted">
+                                <h5>No inventory movements recorded yet.</h5>
+                                <p class="mb-0">All stock changes create an indelible audit trail here.</p>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td class="ps-4 font-monospace text-muted small">
+                                    @item.CreatedAtUtc.ToString("yyyy-MM-dd HH:mm")
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">@item.ProductName</div>
+                                    <div class="small text-muted font-monospace">@item.SKU</div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary font-monospace">@item.WarehouseCode</span>
+                                    <span class="small text-muted d-block">@item.WarehouseName</span>
+                                </td>
+                                <td>
+                                    @if (item.Quantity > 0)
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                            @item.MovementType
+                                        </span>
+                                    }
+                                    else if (item.MovementType == ward.Entities.Enums.MovementType.TransferOut)
+                                    {
+                                        <span class="badge bg-info-subtle text-info border border-info-subtle">
+                                            Transfer Out
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                            @item.MovementType
+                                        </span>
+                                    }
+                                </td>
+                                <td class="text-end font-monospace fw-bold @(item.Quantity > 0 ? "text-success" : "text-danger")">
+                                    @(item.Quantity > 0 ? "+" : "")@item.Quantity.ToString("0.####") @item.UnitSymbol
+                                </td>
+                                <td class="text-end font-monospace text-muted small">${@item.UnitCost.ToString("N2")}</td>
+                                <td class="text-end font-monospace fw-semibold">${@item.TotalCost.ToString("N2")}</td>
+                                <td>
+                                    <span class="badge bg-light text-dark font-monospace border">@item.ReferenceType</span>
+                                    @if (!string.IsNullOrWhiteSpace(item.ReferenceId))
+                                    {
+                                        <div class="small text-muted font-monospace text-truncate" style="max-width: 140px;" title="@item.ReferenceId">
+                                            @item.ReferenceId
+                                        </div>
+                                    }
+                                </td>
+                                <td class="pe-4 small text-muted">
+                                    <div>@(item.Notes ?? "—")</div>
+                                    <span class="text-secondary small">By: @(item.CreatedBy ?? "System")</span>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @if (Model.TotalPages > 1)
+    {
+        <div class="card-footer bg-white d-flex justify-content-between align-items-center py-3">
+            <span class="text-muted small">Page @Model.PageNumber of @Model.TotalPages (@Model.TotalItems total records)</span>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item @(Model.PageNumber <= 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Movements" asp-route-PageNumber="@(Model.PageNumber - 1)" asp-route-WarehouseId="@Model.WarehouseId" asp-route-ProductId="@Model.ProductId" asp-route-MovementType="@Model.MovementType" asp-route-ReferenceQuery="@Model.ReferenceQuery">Previous</a>
+                </li>
+                @for (int p = 1; p <= Model.TotalPages; p++)
+                {
+                    <li class="page-item @(p == Model.PageNumber ? "active" : "")">
+                        <a class="page-link" asp-action="Movements" asp-route-PageNumber="@p" asp-route-WarehouseId="@Model.WarehouseId" asp-route-ProductId="@Model.ProductId" asp-route-MovementType="@Model.MovementType" asp-route-ReferenceQuery="@Model.ReferenceQuery">@p</a>
+                    </li>
+                }
+                <li class="page-item @(Model.PageNumber >= Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="Movements" asp-route-PageNumber="@(Model.PageNumber + 1)" asp-route-WarehouseId="@Model.WarehouseId" asp-route-ProductId="@Model.ProductId" asp-route-MovementType="@Model.MovementType" asp-route-ReferenceQuery="@Model.ReferenceQuery">Next</a>
+                </li>
+            </ul>
+        </div>
+    }
+</div>
