@@ -1,0 +1,191 @@
+@model ward.Models.Sales.SalesInvoiceFilterViewModel
+
+@{
+    ViewData["Title"] = "Sales Invoices";
+    var customers = ViewBag.Customers as List<ward.Models.Sales.CustomerListItemViewModel> ?? new List<ward.Models.Sales.CustomerListItemViewModel>();
+    var totalSales = Model.Invoices.Sum(i => i.GrandTotal);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+        <h1 class="h2 text-primary fw-bold mb-1">
+            <i class="bi bi-receipt me-2"></i>Sales Invoices
+        </h1>
+        <p class="text-muted mb-0">Browse sales transactions, customer orders, profit analysis, and printable receipts.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-controller="Customers" asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-people me-1"></i> Customers
+        </a>
+        <a asp-controller="Pos" asp-action="Index" class="btn btn-warning text-dark fw-bold shadow-sm">
+            <i class="bi bi-cart3 me-1"></i> Open POS Checkout
+        </a>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 border-start border-primary border-4">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold">Total Sales Count</div>
+                <div class="h3 fw-bold text-dark mb-0">@Model.TotalCount Invoices</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 border-start border-success border-4">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold">Page Sales Volume</div>
+                <div class="h3 fw-bold text-success mb-0">$@totalSales.ToString("F2")</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card shadow-sm border-0 mb-4 bg-light">
+    <div class="card-body p-3">
+        <form method="get" asp-action="Index" class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <input type="text" name="SearchQuery" value="@Model.SearchQuery" class="form-control" placeholder="Search invoice #, customer..." />
+            </div>
+            <div class="col-md-3">
+                <select name="CustomerId" class="form-select">
+                    <option value="">All Customers</option>
+                    @foreach (var c in customers)
+                    {
+                        <option value="@c.Id" selected="@(Model.CustomerId == c.Id ? "selected" : null)">@c.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="Status" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="Confirmed" selected="@(Model.Status == ward.Entities.Enums.InvoiceStatus.Confirmed ? "selected" : null)">Confirmed</option>
+                    <option value="FullyPaid" selected="@(Model.Status == ward.Entities.Enums.InvoiceStatus.FullyPaid ? "selected" : null)">Fully Paid</option>
+                    <option value="PartiallyReturned" selected="@(Model.Status == ward.Entities.Enums.InvoiceStatus.PartiallyReturned ? "selected" : null)">Partially Returned</option>
+                    <option value="FullyReturned" selected="@(Model.Status == ward.Entities.Enums.InvoiceStatus.FullyReturned ? "selected" : null)">Fully Returned</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1">
+                    <i class="bi bi-filter me-1"></i> Filter
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Table Card -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3">
+        <h5 class="card-title mb-0 fw-semibold">Invoices Directory</h5>
+    </div>
+    <div class="card-body p-0">
+        @if (!Model.Invoices.Any())
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-receipt display-4 mb-3 d-block opacity-50"></i>
+                <h5 class="fw-bold">No sales invoices found</h5>
+                <p>Complete sales using the POS to generate invoices and inventory deductions.</p>
+                <a asp-controller="Pos" asp-action="Index" class="btn btn-primary mt-2">
+                    <i class="bi bi-cart3 me-1"></i> Open POS
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Invoice Number</th>
+                            <th>Date</th>
+                            <th>Customer</th>
+                            <th>Status</th>
+                            <th class="text-end">SubTotal</th>
+                            <th class="text-end">Tax</th>
+                            <th class="text-end">Grand Total</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var inv in Model.Invoices)
+                        {
+                            <tr>
+                                <td>
+                                    <strong><a asp-action="Details" asp-route-id="@inv.Id" class="text-decoration-none">@inv.InvoiceNumber</a></strong>
+                                    <div class="text-muted small">@inv.ItemsCount item(s)</div>
+                                </td>
+                                <td>@inv.InvoiceDateUtc.ToString("yyyy-MM-dd HH:mm") UTC</td>
+                                <td>
+                                    <div class="fw-semibold text-dark">@inv.CustomerName</div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">@inv.Status</span>
+                                </td>
+                                <td class="text-end text-muted">$@inv.SubTotal.ToString("F2")</td>
+                                <td class="text-end text-muted">$@inv.TaxAmount.ToString("F2")</td>
+                                <td class="text-end fw-bold text-primary fs-6">$@inv.GrandTotal.ToString("F2")</td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-action="Details" asp-route-id="@inv.Id" class="btn btn-outline-primary" title="View Details">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a asp-action="Print" asp-route-id="@inv.Id" target="_blank" class="btn btn-outline-secondary" title="Print Invoice">
+                                            <i class="bi bi-printer"></i>
+                                        </a>
+                                        <a asp-controller="Pos" asp-action="Receipt" asp-route-id="@inv.Id" target="_blank" class="btn btn-outline-dark" title="Print Receipt">
+                                            <i class="bi bi-receipt"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (Model.TotalPages > 1)
+            {
+                <div class="card-footer bg-white d-flex justify-content-between align-items-center py-3">
+                    <span class="text-muted small">Page @Model.PageNumber of @Model.TotalPages</span>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
+                                <a class="page-link" asp-action="Index" asp-route-PageNumber="@(Model.PageNumber - 1)">Previous</a>
+                            </li>
+                            @for (int p = 1; p <= Model.TotalPages; p++)
+                            {
+                                <li class="page-item @(p == Model.PageNumber ? "active" : "")">
+                                    <a class="page-link" asp-action="Index" asp-route-PageNumber="@p">@p</a>
+                                </li>
+                            }
+                            <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
+                                <a class="page-link" asp-action="Index" asp-route-PageNumber="@(Model.PageNumber + 1)">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            }
+        }
+    </div>
+</div>

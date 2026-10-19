@@ -1,0 +1,68 @@
+@model ward.Models.Inventory.StocktakingCreateViewModel
+
+@{
+    ViewData["Title"] = "Start Stocktaking Session";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+        <h1 class="h2 text-primary fw-bold mb-1">
+            <i class="bi bi-clipboard-plus me-2"></i>Start Stocktaking Session
+        </h1>
+        <p class="text-muted mb-0">Initialize an inventory physical counting session for a specific warehouse.</p>
+    </div>
+    <div>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Sessions
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <form asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4" role="alert"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="WarehouseId" class="form-label fw-bold">Select Warehouse <span class="text-danger">*</span></label>
+                        <select asp-for="WarehouseId" class="form-select" asp-items="ViewBag.Warehouses" required autofocus>
+                            <option value="">-- Choose Warehouse to Audit --</option>
+                        </select>
+                        <span asp-validation-for="WarehouseId" class="text-danger small"></span>
+                        <div class="form-text">A snapshot of all active products in this warehouse will be captured.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Reason" class="form-label fw-bold">Audit Purpose / Reason</label>
+                        <input asp-for="Reason" class="form-control" placeholder="e.g. Month-end physical count, Quarterly audit, Spot check..." />
+                        <span asp-validation-for="Reason" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Notes" class="form-label fw-bold">Notes</label>
+                        <textarea asp-for="Notes" class="form-control" rows="3" placeholder="Optional notes for counting staff..."></textarea>
+                        <span asp-validation-for="Notes" class="text-danger small"></span>
+                    </div>
+
+                    <div class="alert alert-info py-2 small mb-4">
+                        <i class="bi bi-info-circle me-1"></i> Counted quantities can be recorded and updated across multiple steps before final managerial approval.
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a asp-action="Index" class="btn btn-outline-secondary px-4">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 fw-bold">
+                            <i class="bi bi-check-circle me-1"></i> Initialize Session
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

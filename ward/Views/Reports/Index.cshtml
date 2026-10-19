@@ -1,0 +1,203 @@
+@{
+    ViewData["Title"] = "Business Intelligence & Reports";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+        <h1 class="h2 text-primary fw-bold mb-1">
+            <i class="bi bi-graph-up-arrow me-2"></i>Business Intelligence & Reports
+        </h1>
+        <p class="text-muted mb-0">Actionable analytics, financial summaries, inventory reconciliations, and sales performance.</p>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <!-- Financial & Sales Reports -->
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 border-top border-primary border-4 hover-shadow transition">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-primary-subtle p-3 rounded-circle text-primary me-3">
+                        <i class="bi bi-currency-dollar fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Sales & Gross Profit</h5>
+                        <small class="text-muted">Financial revenue & profit</small>
+                    </div>
+                </div>
+                <p class="text-muted small">Daily and monthly revenue, cash received, refunds, Cost of Goods Sold, and Gross Profit margins.</p>
+                <a asp-action="Sales" class="btn btn-outline-primary btn-sm fw-bold w-100">
+                    View Sales Report <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product & Category Performance -->
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 border-top border-success border-4 hover-shadow transition">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-success-subtle p-3 rounded-circle text-success me-3">
+                        <i class="bi bi-pie-chart fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Product & Category Sales</h5>
+                        <small class="text-muted">Item profitability</small>
+                    </div>
+                </div>
+                <p class="text-muted small">Top selling flowers, vases, and arrangements with quantities, revenue, and gross profit breakdown.</p>
+                <a asp-action="ProductSales" class="btn btn-outline-success btn-sm fw-bold w-100">
+                    View Product Performance <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Purchases & Returns -->
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 border-top border-info border-4 hover-shadow transition">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-info-subtle p-3 rounded-circle text-info me-3">
+                        <i class="bi bi-truck fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Purchases & Returns</h5>
+                        <small class="text-muted">Supplier procurement</small>
+                    </div>
+                </div>
+                <p class="text-muted small">Supplier invoices, procurement costs, debit notes, returned inventory, and outstanding payables.</p>
+                <a asp-action="Purchases" class="btn btn-outline-info btn-sm fw-bold w-100">
+                    View Purchases Report <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Warehouse Stock Balances -->
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 border-top border-warning border-4 hover-shadow transition">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-warning-subtle p-3 rounded-circle text-warning me-3">
+                        <i class="bi bi-box-seam fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Warehouse Stock Balances</h5>
+                        <small class="text-muted">Inventory valuation</small>
+                    </div>
+                </div>
+                <p class="text-muted small">Real-time stock on hand, average costs, total asset valuation per warehouse, and stock status.</p>
+                <a asp-action="WarehouseStock" class="btn btn-outline-warning btn-sm text-dark fw-bold w-100">
+                    View Stock Valuation <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Movements History -->
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 border-top border-secondary border-4 hover-shadow transition">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-secondary-subtle p-3 rounded-circle text-secondary me-3">
+                        <i class="bi bi-arrow-left-right fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Stock Movement History</h5>
+                        <small class="text-muted">Audit trail ledger</small>
+                    </div>
+                </div>
+                <p class="text-muted small">Every receipt, sale, transfer, return, and stocktaking adjustment across all warehouses.</p>
+                <a asp-action="Movements" class="btn btn-outline-secondary btn-sm fw-bold w-100">
+                    View Movement Ledger <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Low-Stock Alerts -->
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 border-top border-danger border-4 hover-shadow transition">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-danger-subtle p-3 rounded-circle text-danger me-3">
+                        <i class="bi bi-exclamation-triangle fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Low-Stock Warnings</h5>
+                        <small class="text-muted">Reorder alert list</small>
+                    </div>
+                </div>
+                <p class="text-muted small">Items below configured minimum stock levels or completely depleted, with calculated replenishment deficits.</p>
+                <a asp-action="LowStock" class="btn btn-outline-danger btn-sm fw-bold w-100">
+                    View Low Stock List <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stocktaking Variances -->
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 border-top border-dark border-4 hover-shadow transition">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-dark-subtle p-3 rounded-circle text-dark me-3">
+                        <i class="bi bi-clipboard-data fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Stocktaking Variances</h5>
+                        <small class="text-muted">Physical audit analysis</small>
+                    </div>
+                </div>
+                <p class="text-muted small">Historical shortages, surpluses, adjustments, and financial cost write-offs from completed stock counts.</p>
+                <a asp-action="StocktakingVariances" class="btn btn-outline-dark btn-sm fw-bold w-100">
+                    View Variance Audit <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bouquet Component Consumption -->
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 border-top border-primary border-4 hover-shadow transition">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-primary-subtle p-3 rounded-circle text-primary me-3">
+                        <i class="bi bi-flower1 fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Bouquet Component Usage</h5>
+                        <small class="text-muted">Recipe ingredient consumption</small>
+                    </div>
+                </div>
+                <p class="text-muted small">Track flower stems, wrapping, and accessories consumed in handcrafted arrangements and bouquets.</p>
+                <a asp-action="BouquetConsumption" class="btn btn-outline-primary btn-sm fw-bold w-100">
+                    View Component Usage <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer & Supplier Balances -->
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 border-top border-success border-4 hover-shadow transition">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-success-subtle p-3 rounded-circle text-success me-3">
+                        <i class="bi bi-person-lines-fill fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Account Balances</h5>
+                        <small class="text-muted">Receivables & payables</small>
+                    </div>
+                </div>
+                <p class="text-muted small">Consolidated view of customer receivables and outstanding vendor debts with payment history.</p>
+                <a asp-action="Balances" class="btn btn-outline-success btn-sm fw-bold w-100">
+                    View Account Balances <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

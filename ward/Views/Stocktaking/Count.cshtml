@@ -1,0 +1,142 @@
+@model ward.Models.Inventory.StocktakingCountViewModel
+
+@{
+    ViewData["Title"] = $"Count Session: {Model.StocktakingNumber}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <h1 class="h2 text-primary fw-bold mb-0">
+                <i class="bi bi-pencil-square me-2"></i>Physical Count: @Model.StocktakingNumber
+            </h1>
+            <span class="badge bg-primary fs-6">@Model.Status</span>
+        </div>
+        <p class="text-muted mb-0">Warehouse: <strong>@Model.WarehouseName</strong> &bull; Started: @Model.StartDateUtc.ToString("dd MMM yyyy, hh:mm tt") UTC</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Exit Count
+        </a>
+    </div>
+</div>
+
+<form asp-action="Count" method="post" id="countForm">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="StocktakingNumber" />
+    <input type="hidden" asp-for="WarehouseId" />
+    <input type="hidden" asp-for="WarehouseName" />
+    <input type="hidden" asp-for="StartDateUtc" />
+    <input type="hidden" asp-for="Status" />
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-light py-3 d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0 fw-bold text-dark">
+                <i class="bi bi-boxes me-2 text-primary"></i>Enter Physical Quantities (@Model.Lines.Count items)
+            </h5>
+            <div class="small text-muted">
+                System snapshot captured at session start
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="min-width: 250px;">Product Name & SKU</th>
+                        <th>Category</th>
+                        <th class="text-center">System Snapshot</th>
+                        <th style="width: 170px;" class="text-center">Physically Counted</th>
+                        <th class="text-center">Variance</th>
+                        <th style="min-width: 220px;">Reason / Notes (Optional)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < Model.Lines.Count; i++)
+                    {
+                        var line = Model.Lines[i];
+                        <tr>
+                            <td>
+                                <input type="hidden" asp-for="Lines[i].LineId" />
+                                <input type="hidden" asp-for="Lines[i].ProductId" />
+                                <input type="hidden" asp-for="Lines[i].ProductName" />
+                                <input type="hidden" asp-for="Lines[i].ProductSKU" />
+                                <input type="hidden" asp-for="Lines[i].UnitSymbol" />
+                                <input type="hidden" asp-for="Lines[i].CategoryName" />
+                                <input type="hidden" asp-for="Lines[i].SystemQuantity" id="sysQty_@i" />
+                                <input type="hidden" asp-for="Lines[i].UnitCost" />
+
+                                <div class="fw-bold text-dark">@line.ProductName</div>
+                                <small class="text-muted"><code>@line.ProductSKU</code></small>
+                            </td>
+                            <td><span class="badge bg-light text-dark border">@line.CategoryName</span></td>
+                            <td class="text-center fw-bold">
+                                @line.SystemQuantity.ToString("G29") @line.UnitSymbol
+                            </td>
+                            <td>
+                                <div class="input-group input-group-sm">
+                                    <input asp-for="Lines[i].CountedQuantity" 
+                                           type="number" 
+                                           step="0.0001" 
+                                           min="0" 
+                                           class="form-control text-center count-input fw-bold" 
+                                           data-index="@i" 
+                                           data-sys="@line.SystemQuantity" />
+                                    <span class="input-group-text">@line.UnitSymbol</span>
+                                </div>
+                            </td>
+                            <td class="text-center fw-bold" id="variance_@i">
+                                @{
+                                    var diff = line.CountedQuantity - line.SystemQuantity;
+                                }
+                                <span class="@(diff < 0 ? "text-danger" : (diff > 0 ? "text-success" : "text-muted"))">
+                                    @(diff > 0 ? $"+{diff:G29}" : diff.ToString("G29"))
+                                </span>
+                            </td>
+                            <td>
+                                <input asp-for="Lines[i].Reason" class="form-control form-control-sm" placeholder="e.g. Wilted, damage, broken stem..." />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer bg-white p-3">
+            <div class="mb-3">
+                <label asp-for="Notes" class="form-label fw-bold">Session Summary / Count Notes</label>
+                <textarea asp-for="Notes" class="form-control" rows="2" placeholder="Overall notes about counting progress..."></textarea>
+            </div>
+            <div class="d-flex justify-content-end gap-2">
+                <a asp-action="Index" class="btn btn-outline-secondary px-4">Exit</a>
+                <button type="submit" class="btn btn-primary px-4 fw-bold shadow-sm">
+                    <i class="bi bi-save me-1"></i> Save Counts & Proceed to Review
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.querySelectorAll('.count-input').forEach(function(input) {
+            input.addEventListener('input', function() {
+                const idx = this.dataset.index;
+                const sysQty = parseFloat(this.dataset.sys) || 0;
+                const countQty = parseFloat(this.value) || 0;
+                const diff = countQty - sysQty;
+
+                const varElem = document.getElementById('variance_' + idx);
+                if (varElem) {
+                    if (diff < 0) {
+                        varElem.innerHTML = '<span class="text-danger">' + diff.toFixed(4).replace(/\.?0+$/, '') + '</span>';
+                    } else if (diff > 0) {
+                        varElem.innerHTML = '<span class="text-success">+' + diff.toFixed(4).replace(/\.?0+$/, '') + '</span>';
+                    } else {
+                        varElem.innerHTML = '<span class="text-muted">0</span>';
+                    }
+                }
+            });
+        });
+    </script>
+}

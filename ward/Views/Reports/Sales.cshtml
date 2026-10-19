@@ -1,0 +1,167 @@
+@model ward.Models.Reports.SalesReportViewModel
+
+@{
+    ViewData["Title"] = "Sales & Gross Profit Report";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+        <h1 class="h2 text-primary fw-bold mb-1">
+            <i class="bi bi-graph-up-arrow me-2"></i>Sales & Gross Profit Report
+        </h1>
+        <p class="text-muted mb-0">Financial sales metrics, customer returns, Cost of Goods Sold, and Gross Profit analysis.</p>
+    </div>
+    <div>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Reports Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <form method="get" asp-action="Sales" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label fw-bold small text-muted">From Date</label>
+                <input type="date" name="fromDate" class="form-control" value="@Model.FromDate?.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold small text-muted">To Date</label>
+                <input type="date" name="toDate" class="form-control" value="@Model.ToDate?.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold small text-muted">Grouping</label>
+                <select name="grouping" class="form-select">
+                    <option value="Daily" selected="@(Model.GroupingPeriod == "Daily")">Daily Breakdown</option>
+                    <option value="Monthly" selected="@(Model.GroupingPeriod == "Monthly")">Monthly Breakdown</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100 fw-bold">
+                    <i class="bi bi-filter me-1"></i> Apply Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 border-start border-primary border-4">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold">Gross Invoiced Sales</div>
+                <div class="h3 fw-bold text-dark mb-0">$@Model.TotalGrandTotal.ToString("F2")</div>
+                <small class="text-muted">@Model.TotalInvoicesCount Invoices</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 border-start border-warning border-4">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold">Customer Refunds</div>
+                <div class="h3 fw-bold text-danger mb-0">-$@Model.TotalRefunds.ToString("F2")</div>
+                <small class="text-muted">Processed Returns</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 border-start border-info border-4">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold">Cost of Goods Sold</div>
+                <div class="h3 fw-bold text-dark mb-0">$@Model.TotalCostOfGoodsSold.ToString("F2")</div>
+                <small class="text-muted">Recorded Inventory Costs</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 border-start border-success border-4">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold">Gross Profit (Margin)</div>
+                <div class="h3 fw-bold text-success mb-0">$@Model.TotalGrossProfit.ToString("F2")</div>
+                <small class="badge bg-success-subtle text-success border border-success-subtle fw-bold">@Model.OverallGrossProfitMarginPercentage% Gross Margin</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Table -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white py-3">
+        <h5 class="card-title mb-0 fw-bold text-dark">
+            <i class="bi bi-calendar-event me-2 text-primary"></i>@Model.GroupingPeriod Sales & Gross Profit Summary
+        </h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Period</th>
+                    <th class="text-center">Orders</th>
+                    <th class="text-end">SubTotal</th>
+                    <th class="text-end">Discounts</th>
+                    <th class="text-end">Tax</th>
+                    <th class="text-end">Gross Sales</th>
+                    <th class="text-end">Refunds</th>
+                    <th class="text-end">Net Revenue</th>
+                    <th class="text-end">Cost of Goods</th>
+                    <th class="text-end">Gross Profit</th>
+                    <th class="text-end">Margin</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Rows.Count == 0)
+                {
+                    <tr>
+                        <td colspan="11" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary"></i>
+                            No sales transactions found for the selected period.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var row in Model.Rows)
+                    {
+                        <tr>
+                            <td class="fw-bold text-dark">@row.PeriodLabel</td>
+                            <td class="text-center"><span class="badge bg-light text-dark border">@row.InvoicesCount</span></td>
+                            <td class="text-end">$@row.SubTotal.ToString("F2")</td>
+                            <td class="text-end text-danger">@(row.DiscountAmount > 0 ? $"-${row.DiscountAmount:F2}" : "$0.00")</td>
+                            <td class="text-end text-muted">$@row.TaxAmount.ToString("F2")</td>
+                            <td class="text-end fw-bold text-dark">$@row.GrandTotal.ToString("F2")</td>
+                            <td class="text-end text-danger">@(row.RefundedAmount > 0 ? $"-${row.RefundedAmount:F2}" : "$0.00")</td>
+                            <td class="text-end fw-bold text-primary">$@row.NetRevenue.ToString("F2")</td>
+                            <td class="text-end text-muted">$@row.TotalCost.ToString("F2")</td>
+                            <td class="text-end fw-bold text-success">$@row.GrossProfit.ToString("F2")</td>
+                            <td class="text-end">
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                    @row.GrossProfitMarginPercentage%
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+            @if (Model.Rows.Count > 0)
+            {
+                <tfoot class="table-light fw-bold">
+                    <tr>
+                        <td>Total Summary</td>
+                        <td class="text-center">@Model.TotalInvoicesCount</td>
+                        <td class="text-end">$@Model.TotalGrossSales.ToString("F2")</td>
+                        <td class="text-end text-danger">-$@Model.TotalDiscounts.ToString("F2")</td>
+                        <td class="text-end">$@Model.TotalTax.ToString("F2")</td>
+                        <td class="text-end">$@Model.TotalGrandTotal.ToString("F2")</td>
+                        <td class="text-end text-danger">-$@Model.TotalRefunds.ToString("F2")</td>
+                        <td class="text-end text-primary">$@Model.NetSales.ToString("F2")</td>
+                        <td class="text-end">$@Model.TotalCostOfGoodsSold.ToString("F2")</td>
+                        <td class="text-end text-success">$@Model.TotalGrossProfit.ToString("F2")</td>
+                        <td class="text-end">@Model.OverallGrossProfitMarginPercentage%</td>
+                    </tr>
+                </tfoot>
+            }
+        </table>
+    </div>
+</div>

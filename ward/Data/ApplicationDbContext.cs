@@ -33,6 +33,7 @@ namespace ward.Data
         public DbSet<InvoiceReturn> InvoiceReturns => Set<InvoiceReturn>();
         public DbSet<ReturnItem> ReturnItems => Set<ReturnItem>();
         public DbSet<Payment> Payments => Set<Payment>();
+        public DbSet<InvoiceItemComponentConsumption> InvoiceItemComponentConsumptions => Set<InvoiceItemComponentConsumption>();
 
         // Purchasing DbSets
         public DbSet<Supplier> Suppliers => Set<Supplier>();
@@ -128,6 +129,15 @@ namespace ward.Data
                 .HasIndex(r => new { r.BouquetRecipeId, r.ComponentProductId })
                 .IsUnique();
 
+            builder.Entity<Stocktaking>()
+                .HasIndex(s => s.StocktakingNumber);
+
+            builder.Entity<Invoice>()
+                .HasIndex(i => i.IdempotencyToken);
+
+            builder.Entity<InvoiceReturn>()
+                .HasIndex(r => r.IdempotencyToken);
+
             // 4. Relationships and Delete Restrictions
             builder.Entity<Product>()
                 .HasOne(p => p.Category)
@@ -211,6 +221,18 @@ namespace ward.Data
                 .HasOne(i => i.Warehouse)
                 .WithMany()
                 .HasForeignKey(i => i.WarehouseId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<InvoiceItemComponentConsumption>()
+                .HasOne(c => c.InvoiceItem)
+                .WithMany(i => i.ComponentConsumptions)
+                .HasForeignKey(c => c.InvoiceItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<InvoiceItemComponentConsumption>()
+                .HasOne(c => c.ComponentProduct)
+                .WithMany()
+                .HasForeignKey(c => c.ComponentProductId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<InvoiceReturn>()

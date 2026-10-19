@@ -1,0 +1,178 @@
+@model ward.Models.Sales.SalesInvoiceDetailsViewModel
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Receipt - @Model.InvoiceNumber</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+            color: #000;
+        }
+        .receipt-container {
+            max-width: 380px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 20px;
+            border: 1px dashed #ccc;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        .store-title {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .dashed-line {
+            border-top: 1px dashed #000;
+            margin: 10px 0;
+        }
+        @@media print {
+            body {
+                background: #fff;
+            }
+            .receipt-container {
+                max-width: 100%;
+                border: none;
+                box-shadow: none;
+                padding: 0;
+                margin: 0;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt-container">
+        <div class="no-print d-flex justify-content-between mb-3 border-bottom pb-2">
+            <span class="text-muted small">Receipt Preview</span>
+            <div>
+                <button onclick="window.print()" class="btn btn-sm btn-primary">Print Receipt</button>
+                <button onclick="window.close()" class="btn btn-sm btn-outline-secondary">Close</button>
+            </div>
+        </div>
+
+        <!-- Store Header -->
+        <div class="text-center mb-2">
+            <div class="store-title">FLORAFLOW</div>
+            <div class="small">Flower Shop & Floral Design</div>
+            <div class="small">100 Orchid Boulevard, Central Market</div>
+            <div class="small">Tel: +1 (555) 356-7235</div>
+            <div class="small">VAT ID: FLORA-TAX-998822</div>
+        </div>
+
+        <div class="dashed-line"></div>
+
+        <!-- Order Info -->
+        <div class="small mb-2">
+            <div><strong>Receipt #:</strong> @Model.InvoiceNumber</div>
+            <div><strong>Date:</strong> @Model.InvoiceDateUtc.ToString("yyyy-MM-dd HH:mm") UTC</div>
+            <div><strong>Customer:</strong> @Model.CustomerName</div>
+            <div><strong>Cashier:</strong> @(Model.CreatedByUserId ?? "POS Terminal 01")</div>
+        </div>
+
+        <div class="dashed-line"></div>
+
+        <!-- Items -->
+        <table class="w-100 mb-2">
+            <thead>
+                <tr class="fw-bold">
+                    <td style="width: 50%;">ITEM</td>
+                    <td class="text-center" style="width: 20%;">QTY</td>
+                    <td class="text-end" style="width: 30%;">TOTAL</td>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var it in Model.Items)
+                {
+                    <tr>
+                        <td>
+                            <div>@it.ProductName</div>
+                            @if (it.IsBouquetRecipeDeduction)
+                            {
+                                <small class="text-muted d-block">[Fresh Floral Arrangement]</small>
+                            }
+                        </td>
+                        <td class="text-center">@it.Quantity.ToString("G29") @it.UnitSymbol</td>
+                        <td class="text-end">$@it.LineTotal.ToString("F2")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="dashed-line"></div>
+
+        <!-- Totals -->
+        <div class="d-flex justify-content-between small">
+            <span>Subtotal:</span>
+            <span>$@Model.SubTotal.ToString("F2")</span>
+        </div>
+        @if (Model.DiscountAmount > 0)
+        {
+            <div class="d-flex justify-content-between small text-danger">
+                <span>Discount:</span>
+                <span>-$@Model.DiscountAmount.ToString("F2")</span>
+            </div>
+        }
+        <div class="d-flex justify-content-between small">
+            <span>Tax (@Model.TaxRatePercentage.ToString("G29")%):</span>
+            <span>+$@Model.TaxAmount.ToString("F2")</span>
+        </div>
+        <div class="d-flex justify-content-between fw-bold fs-6 my-1">
+            <span>TOTAL:</span>
+            <span>$@Model.GrandTotal.ToString("F2")</span>
+        </div>
+
+        <div class="dashed-line"></div>
+
+        <!-- Payment Breakdown -->
+        <div class="d-flex justify-content-between small">
+            <span>Payment Method:</span>
+            <span>@Model.PaymentMethod</span>
+        </div>
+        @if (Model.PaymentMethod == ward.Entities.Enums.PaymentMethod.Cash)
+        {
+            <div class="d-flex justify-content-between small">
+                <span>Cash Tendered:</span>
+                <span>$@Model.AmountReceived.ToString("F2")</span>
+            </div>
+            <div class="d-flex justify-content-between small fw-bold">
+                <span>Change Given:</span>
+                <span>$@Model.ChangeGiven.ToString("F2")</span>
+            </div>
+        }
+        else
+        {
+            <div class="d-flex justify-content-between small">
+                <span>Amount Paid:</span>
+                <span>$@Model.PaidAmount.ToString("F2")</span>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.PaymentReference))
+            {
+                <div class="d-flex justify-content-between small">
+                    <span>Reference #:</span>
+                    <span>@Model.PaymentReference</span>
+                </div>
+            }
+        }
+
+        <div class="dashed-line"></div>
+
+        <div class="text-center mt-3 small">
+            <div>*** THANK YOU FOR YOUR PURCHASE ***</div>
+            <div class="text-muted mt-1">Fresh Flowers Brighten Every Day</div>
+            <div class="text-muted mt-1">Please retain receipt for returns within 48h</div>
+        </div>
+    </div>
+</body>
+</html>

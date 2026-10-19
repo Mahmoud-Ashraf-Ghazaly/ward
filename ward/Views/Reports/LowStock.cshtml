@@ -1,0 +1,122 @@
+@model ward.Models.Reports.LowStockReportViewModel
+
+@{
+    ViewData["Title"] = "Low Stock & Reorder Alerts";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+        <h1 class="h2 text-danger fw-bold mb-1">
+            <i class="bi bi-exclamation-triangle-fill me-2 text-danger"></i>Low Stock & Reorder Alerts
+        </h1>
+        <p class="text-muted mb-0">Products that have fallen below minimum safety stock levels or are completely exhausted.</p>
+    </div>
+    <div>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Reports Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <form method="get" asp-action="LowStock" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label fw-bold small text-muted">Warehouse</label>
+                <select name="warehouseId" class="form-select" asp-items="ViewBag.Warehouses">
+                    <option value="">-- All Warehouses --</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100 fw-bold">Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 border-start border-danger border-4">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold">Completely Out of Stock</div>
+                <div class="h3 fw-bold text-danger mb-0">@Model.OutOfStockCount Products</div>
+                <small class="text-muted">Stock level is 0 or depleted</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 border-start border-warning border-4">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold">Below Minimum Threshold</div>
+                <div class="h3 fw-bold text-warning mb-0">@Model.LowStockCount Products</div>
+                <small class="text-muted">Reorder recommended</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white py-3">
+        <h5 class="card-title mb-0 fw-bold text-dark">
+            <i class="bi bi-bell me-2 text-danger"></i>Replenishment Priority List (@Model.Rows.Count)
+        </h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Product</th>
+                    <th>SKU</th>
+                    <th>Category</th>
+                    <th>Warehouse</th>
+                    <th class="text-center">Current Stock</th>
+                    <th class="text-center">Min. Required</th>
+                    <th class="text-center">Replenishment Deficit</th>
+                    <th class="text-center">Alert Level</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Rows.Count == 0)
+                {
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-success">
+                            <i class="bi bi-check-circle-fill fs-1 d-block mb-2 text-success"></i>
+                            All inventory levels are healthy! No products currently below minimum thresholds.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var row in Model.Rows)
+                    {
+                        <tr>
+                            <td class="fw-bold text-dark">@row.ProductName</td>
+                            <td><code>@row.ProductSKU</code></td>
+                            <td><span class="badge bg-light text-dark border">@row.CategoryName</span></td>
+                            <td>@row.WarehouseName</td>
+                            <td class="text-center fw-bold fs-6 @(row.IsOutOfStock ? "text-danger" : "text-warning")">
+                                @row.QuantityOnHand.ToString("G29") @row.UnitSymbol
+                            </td>
+                            <td class="text-center text-muted">@row.MinimumStockLevel.ToString("G29") @row.UnitSymbol</td>
+                            <td class="text-center fw-bold text-danger">
+                                +@row.DeficitQuantity.ToString("G29") @row.UnitSymbol needed
+                            </td>
+                            <td class="text-center">
+                                @if (row.IsOutOfStock)
+                                {
+                                    <span class="badge bg-danger">Critical: Out of Stock</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">Warning: Low Stock</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

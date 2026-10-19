@@ -62,8 +62,10 @@ namespace ward.Entities.Enums
 
     public enum ReturnDisposition
     {
-        Restocked = 1,
-        Discarded = 2
+        Restocked = 1,     // Sellable (Restocked into inventory)
+        Damaged = 2,       // Damaged (Not restored to inventory)
+        Unsellable = 3,    // Unsellable (Not restored to inventory)
+        Discarded = 4      // Discarded (Not restored to inventory)
     }
 
     public enum PaymentMethod

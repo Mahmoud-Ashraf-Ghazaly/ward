@@ -155,6 +155,29 @@ namespace ward.Data
                 );
                 await _context.SaveChangesAsync();
             }
+
+            // 7. Seed Default Customers
+            if (!await _context.Customers.AnyAsync())
+            {
+                _context.Customers.AddRange(
+                    new ward.Entities.Sales.Customer
+                    {
+                        Name = "Walk-in Retail Customer",
+                        Phone = "555-0100",
+                        Email = "walkin@flowershop.local",
+                        IsActive = true
+                    },
+                    new ward.Entities.Sales.Customer
+                    {
+                        Name = "Ritz Royal Events & Weddings",
+                        Phone = "+1 555 789 0123",
+                        Email = "weddings@ritzroyal.example.com",
+                        Address = "500 Grand Avenue, Downtown",
+                        IsActive = true
+                    }
+                );
+                await _context.SaveChangesAsync();
+            }
         }
     }
 }

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - FloraFlow Management System</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/ward.styles.css" asp-append-version="true" />
 </head>
@@ -46,10 +47,22 @@
                             <a class="nav-link text-white-50" asp-area="" asp-controller="Warehouses" asp-action="Index">Warehouses</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-white-50" href="#sales">Sales & Invoices</a>
+                            <a class="nav-link text-warning fw-bold" asp-area="" asp-controller="Pos" asp-action="Index"><i class="bi bi-cart3 me-1"></i>POS</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-white-50" href="#returns">Returns</a>
+                            <a class="nav-link text-white" asp-area="" asp-controller="Sales" asp-action="Index">Sales Invoices</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white-50" asp-area="" asp-controller="Sales" asp-action="Returns">Sales Returns</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white-50" asp-area="" asp-controller="Stocktaking" asp-action="Index">Stocktaking</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white-50" asp-area="" asp-controller="Reports" asp-action="Index">Reports</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white-50" asp-area="" asp-controller="Customers" asp-action="Index">Customers</a>
                         </li>
                     </ul>
                     <ul class="navbar-nav ms-auto align-items-center">

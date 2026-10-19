@@ -1,0 +1,256 @@
+@model ward.Models.Sales.SalesInvoiceDetailsViewModel
+@using ward.Entities.Enums
+
+@{
+    ViewData["Title"] = $"Invoice {Model.InvoiceNumber}";
+    var isEligibleForReturn = Model.Status == InvoiceStatus.Confirmed || 
+                              Model.Status == InvoiceStatus.FullyPaid || 
+                              Model.Status == InvoiceStatus.PartiallyReturned;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <h1 class="h2 text-primary fw-bold mb-0">
+                <i class="bi bi-receipt me-2"></i>@Model.InvoiceNumber
+            </h1>
+            <span class="badge @(Model.Status switch {
+                InvoiceStatus.FullyPaid => "bg-success",
+                InvoiceStatus.Confirmed => "bg-primary",
+                InvoiceStatus.PartiallyReturned => "bg-warning text-dark",
+                InvoiceStatus.FullyReturned => "bg-secondary",
+                InvoiceStatus.Cancelled => "bg-danger",
+                _ => "bg-info"
+            }) fs-6">@Model.Status</span>
+        </div>
+        <p class="text-muted mb-0">Issued on @Model.InvoiceDateUtc.ToString("dd MMM yyyy, hh:mm tt") UTC</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Invoices
+        </a>
+        <a asp-action="Print" asp-route-id="@Model.Id" target="_blank" class="btn btn-outline-primary">
+            <i class="bi bi-printer me-1"></i> Print Invoice
+        </a>
+        <a asp-controller="Pos" asp-action="Receipt" asp-route-id="@Model.Id" target="_blank" class="btn btn-outline-dark">
+            <i class="bi bi-receipt me-1"></i> Thermal Receipt
+        </a>
+        @if (isEligibleForReturn)
+        {
+            <a asp-action="CreateReturn" asp-route-invoiceId="@Model.Id" class="btn btn-warning text-dark fw-bold">
+                <i class="bi bi-arrow-counterclockwise me-1"></i> Process Return
+            </a>
+        }
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Info cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 border-top border-primary border-3">
+            <div class="card-body">
+                <h6 class="card-title text-muted fw-bold text-uppercase small mb-3">Customer Information</h6>
+                <div class="fw-bold text-dark fs-5">@Model.CustomerName</div>
+                @if (!string.IsNullOrWhiteSpace(Model.CustomerPhone))
+                {
+                    <div class="text-muted small mt-1"><i class="bi bi-telephone me-1"></i>@Model.CustomerPhone</div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.CustomerEmail))
+                {
+                    <div class="text-muted small"><i class="bi bi-envelope me-1"></i>@Model.CustomerEmail</div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 border-top border-info border-3">
+            <div class="card-body">
+                <h6 class="card-title text-muted fw-bold text-uppercase small mb-3">Payment Summary</h6>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Payment Method:</span>
+                    <span class="fw-bold">@Model.PaymentMethod</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Amount Received:</span>
+                    <span class="fw-bold text-dark">$@Model.AmountReceived.ToString("F2")</span>
+                </div>
+                @if (Model.ChangeGiven > 0)
+                {
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Change Given:</span>
+                        <span class="fw-bold text-success">$@Model.ChangeGiven.ToString("F2")</span>
+                    </div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.PaymentReference))
+                {
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Reference:</span>
+                        <span class="text-muted small">@Model.PaymentReference</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 border-top border-success border-3">
+            <div class="card-body">
+                <h6 class="card-title text-muted fw-bold text-uppercase small mb-3">Profit & Margin Analysis</h6>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Total Cost:</span>
+                    <span class="fw-bold text-dark">$@Model.TotalCost.ToString("F2")</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Gross Profit:</span>
+                    <span class="fw-bold text-success">$@Model.TotalProfit.ToString("F2")</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Profit Margin:</span>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold">@Model.ProfitMargin%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Invoice Items Table -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white py-3">
+        <h5 class="card-title mb-0 fw-bold text-dark">
+            <i class="bi bi-basket me-2 text-primary"></i>Items Purchased
+        </h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Item / Description</th>
+                    <th>SKU</th>
+                    <th class="text-center">Quantity</th>
+                    <th class="text-end">Unit Price</th>
+                    <th class="text-end">Discount</th>
+                    <th class="text-end">Line Total</th>
+                    <th class="text-end">Unit Cost</th>
+                    <th class="text-end">Profit (Margin)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Items)
+                {
+                    <tr>
+                        <td>
+                            <div class="fw-bold text-dark">@item.ProductName</div>
+                            @if (item.IsBouquetRecipeDeduction)
+                            {
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle small">
+                                    <i class="bi bi-flower1 me-1"></i>Bouquet (Recipe-Deducted)
+                                </span>
+                            }
+                        </td>
+                        <td><code>@item.ProductSKU</code></td>
+                        <td class="text-center fw-bold">@item.Quantity.ToString("G29") @item.UnitSymbol</td>
+                        <td class="text-end">$@item.UnitPrice.ToString("F2")</td>
+                        <td class="text-end text-danger">@(item.DiscountAmount > 0 ? $"-${item.DiscountAmount:F2}" : "$0.00")</td>
+                        <td class="text-end fw-bold text-dark">$@item.LineTotal.ToString("F2")</td>
+                        <td class="text-end text-muted small">$@item.UnitCost.ToString("F2")</td>
+                        <td class="text-end">
+                            <span class="text-success fw-bold">$@item.Profit.ToString("F2")</span>
+                            <span class="badge bg-light text-muted border small">@item.MarginPercentage%</span>
+                        </td>
+                    </tr>
+                    @if (item.IsBouquetRecipeDeduction && item.ComponentConsumptions.Any())
+                    {
+                        <tr class="table-light">
+                            <td colspan="8" class="p-3">
+                                <div class="ms-4 p-2 bg-white rounded border">
+                                    <div class="fw-bold small text-muted text-uppercase mb-2">
+                                        <i class="bi bi-diagram-3 me-1"></i>Component Consumed for this Bouquet (Inventory Deducted):
+                                    </div>
+                                    <div class="row g-2">
+                                        @foreach (var comp in item.ComponentConsumptions)
+                                        {
+                                            <div class="col-md-3">
+                                                <div class="p-2 border rounded bg-light small">
+                                                    <div class="fw-bold text-dark">@comp.ComponentProductName</div>
+                                                    <div class="text-muted d-flex justify-content-between">
+                                                        <span>Qty: @comp.QuantityConsumed.ToString("G29") @comp.UnitSymbol</span>
+                                                        <span>Cost: $@comp.TotalCost.ToString("F2")</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer bg-white p-3">
+        <div class="row justify-content-end">
+            <div class="col-md-4">
+                <div class="d-flex justify-content-between py-1">
+                    <span class="text-muted">SubTotal:</span>
+                    <span class="fw-bold">$@Model.SubTotal.ToString("F2")</span>
+                </div>
+                @if (Model.DiscountAmount > 0)
+                {
+                    <div class="d-flex justify-content-between py-1 text-danger">
+                        <span>Global Discount:</span>
+                        <span>-$@Model.DiscountAmount.ToString("F2")</span>
+                    </div>
+                }
+                @if (Model.TaxRatePercentage > 0)
+                {
+                    <div class="d-flex justify-content-between py-1">
+                        <span class="text-muted">Tax (@Model.TaxRatePercentage%):</span>
+                        <span class="fw-bold">$@Model.TaxAmount.ToString("F2")</span>
+                    </div>
+                }
+                <hr class="my-2" />
+                <div class="d-flex justify-content-between py-1 fs-5 fw-bold text-primary">
+                    <span>Grand Total:</span>
+                    <span>$@Model.GrandTotal.ToString("F2")</span>
+                </div>
+                <div class="d-flex justify-content-between py-1 fw-bold text-success">
+                    <span>Paid Amount:</span>
+                    <span>$@Model.PaidAmount.ToString("F2")</span>
+                </div>
+                @if (Model.Balance > 0)
+                {
+                    <div class="d-flex justify-content-between py-1 fw-bold text-danger">
+                        <span>Balance Due:</span>
+                        <span>$@Model.Balance.ToString("F2")</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.Notes))
+{
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <h6 class="fw-bold text-muted text-uppercase small mb-2"><i class="bi bi-sticky me-1"></i>Order Notes</h6>
+            <p class="mb-0 text-dark">@Model.Notes</p>
+        </div>
+    </div>
+}

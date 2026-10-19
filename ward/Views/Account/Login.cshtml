@@ -1,0 +1,253 @@
+@model ward.Controllers.LoginViewModel
+@{
+    ViewData["Title"] = "Sign In";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign In — Ward Flower Shop</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0f0c1a 0%, #1a1030 40%, #0d1a2e 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 60% 50% at 20% 30%, rgba(168,85,247,0.15) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 60% at 80% 70%, rgba(59,130,246,0.12) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 40% at 50% 10%, rgba(236,72,153,0.08) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .card {
+            position: relative;
+            width: 100%;
+            max-width: 420px;
+            margin: 1.5rem;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05) inset;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 8px 32px rgba(168,85,247,0.4);
+        }
+
+        .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.02em;
+        }
+
+        .logo p {
+            font-size: 0.875rem;
+            color: rgba(255,255,255,0.5);
+            margin-top: 0.25rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.02em;
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 0.9375rem;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+
+        input[type="email"]:focus,
+        input[type="password"]:focus {
+            border-color: rgba(168,85,247,0.6);
+            background: rgba(168,85,247,0.08);
+            box-shadow: 0 0 0 3px rgba(168,85,247,0.15);
+        }
+
+        input[type="email"]::placeholder,
+        input[type="password"]::placeholder {
+            color: rgba(255,255,255,0.3);
+        }
+
+        .remember-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .remember-row input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #a855f7;
+            cursor: pointer;
+        }
+
+        .remember-row label {
+            margin: 0;
+            font-size: 0.875rem;
+            cursor: pointer;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 0.875rem;
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+            box-shadow: 0 4px 20px rgba(168,85,247,0.4);
+            letter-spacing: 0.01em;
+        }
+
+        .btn-login:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 28px rgba(168,85,247,0.5);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .error-list {
+            background: rgba(239,68,68,0.12);
+            border: 1px solid rgba(239,68,68,0.3);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1.25rem;
+            list-style: none;
+        }
+
+        .error-list li {
+            font-size: 0.875rem;
+            color: #fca5a5;
+        }
+
+        .divider {
+            border: none;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            margin: 1.5rem 0;
+        }
+
+        .hint {
+            text-align: center;
+            font-size: 0.8125rem;
+            color: rgba(255,255,255,0.35);
+        }
+
+        .validation-message {
+            font-size: 0.8rem;
+            color: #fca5a5;
+            margin-top: 0.375rem;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="logo">
+            <div class="logo-icon">🌸</div>
+            <h1>Ward</h1>
+            <p>Flower Shop Management</p>
+        </div>
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <ul class="error-list">
+                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <li>@error.ErrorMessage</li>
+                }
+            </ul>
+        }
+
+        <form asp-action="Login" asp-controller="Account" method="post">
+            <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+            @Html.AntiForgeryToken()
+
+            <div class="form-group">
+                <label asp-for="Email">Email address</label>
+                <input asp-for="Email" type="email" placeholder="admin@flowershop.local" autocomplete="email" />
+                <span asp-validation-for="Email" class="validation-message"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Password">Password</label>
+                <input asp-for="Password" type="password" placeholder="••••••••" autocomplete="current-password" />
+                <span asp-validation-for="Password" class="validation-message"></span>
+            </div>
+
+            <div class="remember-row">
+                <input asp-for="RememberMe" type="checkbox" id="RememberMe" />
+                <label for="RememberMe">Remember me</label>
+            </div>
+
+            <button type="submit" class="btn-login" id="btn-signin">Sign In</button>
+        </form>
+
+        <hr class="divider" />
+        <p class="hint">Ward Flower Shop ERP &copy; 2026</p>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+</body>
+</html>

@@ -60,14 +60,26 @@ namespace ward.Entities.Inventory
     public class Stocktaking
     {
         public int Id { get; set; }
+        public string StocktakingNumber { get; set; } = string.Empty;
 
         public int WarehouseId { get; set; }
         public Warehouse Warehouse { get; set; } = null!;
 
         public DateTime StartDateUtc { get; set; } = DateTime.UtcNow;
         public DateTime? CompletedDateUtc { get; set; }
+        public DateTime? ApprovedDateUtc { get; set; }
+        public string? CreatedByUserId { get; set; }
+        public string? ApprovedByUserId { get; set; }
+
         public StocktakingStatus Status { get; set; } = StocktakingStatus.Draft;
+        public string? Reason { get; set; }
         public string? Notes { get; set; }
+        public string? IdempotencyToken { get; set; }
+
+        public decimal TotalShortageQuantity { get; set; } = 0;
+        public decimal TotalSurplusQuantity { get; set; } = 0;
+        public decimal NetDifferenceQuantity { get; set; } = 0;
+        public decimal TotalVarianceCost { get; set; } = 0;
 
         public ICollection<StocktakingLine> Lines { get; set; } = new List<StocktakingLine>();
     }
@@ -85,6 +97,9 @@ namespace ward.Entities.Inventory
         public decimal SystemQuantity { get; set; }
         public decimal CountedQuantity { get; set; }
         public decimal DifferenceQuantity { get; set; }
+        public decimal CurrentSystemQuantity { get; set; }
         public decimal UnitCost { get; set; }
+        public decimal VarianceCost { get; set; }
+        public string? Reason { get; set; }
     }
 }

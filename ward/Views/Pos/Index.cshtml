@@ -1,0 +1,700 @@
+@{
+    ViewData["Title"] = "Point of Sale (POS)";
+    var warehouses = ViewBag.Warehouses as List<ward.Models.Inventory.WarehouseListItemViewModel> ?? new List<ward.Models.Inventory.WarehouseListItemViewModel>();
+    var categories = ViewBag.Categories as List<ward.Models.Catalog.CategoryListItemViewModel> ?? new List<ward.Models.Catalog.CategoryListItemViewModel>();
+    var customers = ViewBag.Customers as List<ward.Models.Sales.CustomerListItemViewModel> ?? new List<ward.Models.Sales.CustomerListItemViewModel>();
+    var defaultWarehouse = warehouses.FirstOrDefault(w => w.IsDefault) ?? warehouses.FirstOrDefault();
+}
+
+<style>
+    .pos-container {
+        height: calc(100vh - 120px);
+        min-height: 650px;
+    }
+    .pos-products-scroll {
+        overflow-y: auto;
+        height: calc(100vh - 240px);
+    }
+    .pos-cart-scroll {
+        overflow-y: auto;
+        height: calc(100vh - 430px);
+        min-height: 220px;
+    }
+    .product-card {
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .product-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12) !important;
+    }
+    .cat-badge {
+        cursor: pointer;
+    }
+</style>
+
+<div class="pos-container">
+    <div class="row g-3 h-100">
+        <!-- LEFT PANEL: Product Catalog & Barcode Scanner -->
+        <div class="col-lg-7 d-flex flex-column h-100">
+            <!-- Top Controls Card -->
+            <div class="card shadow-sm border-0 mb-3 bg-white">
+                <div class="card-body p-3">
+                    <div class="row g-2 align-items-center">
+                        <!-- Barcode Scanner input -->
+                        <div class="col-md-7">
+                            <div class="input-group">
+                                <span class="input-group-text bg-primary text-white">
+                                    <i class="bi bi-upc-scan"></i>
+                                </span>
+                                <input type="text" id="barcodeScannerInput" class="form-control" placeholder="Scan Barcode or Type SKU (Press Enter)..." autofocus autocomplete="off" />
+                                <button class="btn btn-outline-primary" type="button" id="btnScan">
+                                    Scan
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Search Box -->
+                        <div class="col-md-5">
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted">
+                                    <i class="bi bi-search"></i>
+                                </span>
+                                <input type="text" id="productSearchInput" class="form-control" placeholder="Search product name..." />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category Pills -->
+                    <div class="d-flex gap-1 overflow-auto pt-2 pb-1 mt-2 border-top" id="categoryTabs">
+                        <button class="btn btn-sm btn-primary category-pill" data-id="">All Items</button>
+                        @foreach (var cat in categories)
+                        {
+                            <button class="btn btn-sm btn-outline-secondary category-pill text-nowrap" data-id="@cat.Id">
+                                @cat.Name
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product Grid -->
+            <div class="card shadow-sm border-0 flex-grow-1 bg-light">
+                <div class="card-body p-3 pos-products-scroll" id="productsGridContainer">
+                    <div class="row g-2" id="productsGrid">
+                        <!-- Loaded dynamically via AJAX -->
+                    </div>
+                    <div id="noProductsFound" class="text-center py-5 text-muted" style="display: none;">
+                        <i class="bi bi-search display-5 d-block mb-2 opacity-50"></i>
+                        <h6>No products found matching criteria</h6>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL: Cart & Payment Checkout -->
+        <div class="col-lg-5 d-flex flex-column h-100">
+            <div class="card shadow-sm border-0 h-100 d-flex flex-column bg-white">
+                <!-- Header: Warehouse & Customer Selection -->
+                <div class="card-header bg-white py-3 border-bottom">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-6">
+                            <label class="form-label small text-muted mb-1 fw-bold">Warehouse Stock</label>
+                            <select id="posWarehouseSelect" class="form-select form-select-sm">
+                                @foreach (var wh in warehouses)
+                                {
+                                    <option value="@wh.Id" selected="@(wh.Id == defaultWarehouse?.Id ? "selected" : null)">
+                                        @wh.Name (@wh.Code)
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label small text-muted mb-0 fw-bold">Customer</label>
+                                <a href="javascript:void(0)" class="small text-decoration-none" data-bs-toggle="modal" data-bs-target="#quickCustomerModal">+ New</a>
+                            </div>
+                            <select id="posCustomerSelect" class="form-select form-select-sm">
+                                <option value="">Walk-in Customer (Default)</option>
+                                @foreach (var c in customers)
+                                {
+                                    <option value="@c.Id">@c.Name (@(c.Phone ?? "No Phone"))</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cart Items Table Container -->
+                <div class="card-body p-0 pos-cart-scroll flex-grow-1">
+                    <div id="emptyCartNotice" class="text-center py-5 text-muted">
+                        <i class="bi bi-cart3 display-4 mb-2 d-block opacity-25"></i>
+                        <p class="mb-0">Cart is empty</p>
+                        <small class="text-muted">Scan a barcode or click items to add to order</small>
+                    </div>
+
+                    <div class="table-responsive" id="cartTableContainer" style="display: none;">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 45%;">Item</th>
+                                    <th class="text-center" style="width: 25%;">Qty</th>
+                                    <th class="text-end" style="width: 20%;">Total</th>
+                                    <th style="width: 10%;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="cartItemsList">
+                                <!-- Cart rows injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Cart Summary & Financials -->
+                <div class="card-footer bg-light p-3 border-top">
+                    <!-- Global Discount & Tax Controls -->
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">Disc $</span>
+                                <input type="number" id="cartDiscountInput" class="form-control" value="0.00" min="0" step="0.50" />
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">Tax %</span>
+                                <input type="number" id="cartTaxRateInput" class="form-control" value="0" min="0" max="100" step="1" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between small text-muted mb-1">
+                        <span>SubTotal:</span>
+                        <span class="fw-semibold text-dark" id="lblSubTotal">$0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between small text-muted mb-1">
+                        <span>Tax Amount:</span>
+                        <span class="fw-semibold text-dark" id="lblTaxAmount">$0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3 pt-1 border-top">
+                        <span class="h5 fw-bold text-dark mb-0">Grand Total:</span>
+                        <span class="h3 fw-bold text-primary mb-0" id="lblGrandTotal">$0.00</span>
+                    </div>
+
+                    <!-- Payment Method Tabs -->
+                    <div class="btn-group btn-group-sm w-100 mb-2" role="group" id="paymentMethodGroup">
+                        <input type="radio" class="btn-check" name="payMethod" id="payCash" value="Cash" checked>
+                        <label class="btn btn-outline-success" for="payCash"><i class="bi bi-cash me-1"></i>Cash</label>
+
+                        <input type="radio" class="btn-check" name="payMethod" id="payCredit" value="CreditCard">
+                        <label class="btn btn-outline-primary" for="payCredit"><i class="bi bi-credit-card me-1"></i>Card</label>
+
+                        <input type="radio" class="btn-check" name="payMethod" id="payBank" value="BankTransfer">
+                        <label class="btn btn-outline-info" for="payBank"><i class="bi bi-bank me-1"></i>Transfer</label>
+                    </div>
+
+                    <!-- Cash Calculation Box -->
+                    <div id="cashCalcBox" class="p-2 border rounded bg-white mb-3">
+                        <div class="d-flex gap-1 mb-2">
+                            <button type="button" class="btn btn-sm btn-light border flex-fill quick-cash" data-val="exact">Exact</button>
+                            <button type="button" class="btn btn-sm btn-light border flex-fill quick-cash" data-val="10">$10</button>
+                            <button type="button" class="btn btn-sm btn-light border flex-fill quick-cash" data-val="20">$20</button>
+                            <button type="button" class="btn btn-sm btn-light border flex-fill quick-cash" data-val="50">$50</button>
+                            <button type="button" class="btn btn-sm btn-light border flex-fill quick-cash" data-val="100">$100</button>
+                        </div>
+                        <div class="row g-2 align-items-center">
+                            <div class="col-6">
+                                <label class="form-label small text-muted mb-0 fw-bold">Cash Received ($):</label>
+                                <input type="number" id="cashReceivedInput" class="form-control form-control-sm fw-bold" step="0.01" min="0" value="0.00" />
+                            </div>
+                            <div class="col-6 text-end">
+                                <label class="form-label small text-muted mb-0 fw-bold">Change Due:</label>
+                                <div class="h5 fw-bold text-success mb-0" id="lblChangeDue">$0.00</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Checkout Button -->
+                    <button type="button" class="btn btn-primary btn-lg w-100 shadow fw-bold py-2" id="btnCheckout" disabled>
+                        <i class="bi bi-check2-circle me-1"></i> Complete Sale & Pay
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Add Customer Modal -->
+<div class="modal fade" id="quickCustomerModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold">Add Customer</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-2">
+                    <label class="form-label small fw-bold">Full Name *</label>
+                    <input type="text" id="quickCustomerName" class="form-control form-control-sm" required />
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small">Phone</label>
+                    <input type="text" id="quickCustomerPhone" class="form-control form-control-sm" />
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small">Email</label>
+                    <input type="email" id="quickCustomerEmail" class="form-control form-control-sm" />
+                </div>
+            </div>
+            <div class="modal-footer p-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-sm btn-primary" id="btnSaveQuickCustomer">Save Customer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Receipt Modal -->
+<div class="modal fade" id="receiptModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-check-circle-fill me-2"></i>Sale Completed!</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <div class="display-6 fw-bold text-dark mb-1" id="receiptGrandTotal">$0.00</div>
+                <p class="text-muted mb-3" id="receiptInvoiceNumber">Invoice: INV-2026-0001</p>
+
+                <div class="alert alert-light border text-start mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Payment Method:</span>
+                        <strong id="receiptMethod">Cash</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Amount Received:</span>
+                        <strong id="receiptReceived">$0.00</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Change Given:</span>
+                        <strong class="text-success fs-5" id="receiptChange">$0.00</strong>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary flex-fill" data-bs-dismiss="modal">
+                        New Sale
+                    </button>
+                    <a href="#" target="_blank" class="btn btn-primary flex-fill" id="btnOpenReceipt">
+                        <i class="bi bi-printer me-1"></i> Print Receipt
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            let cart = [];
+            let currentIdempotencyToken = generateUUID();
+
+            const warehouseSelect = document.getElementById('posWarehouseSelect');
+            const customerSelect = document.getElementById('posCustomerSelect');
+            const searchInput = document.getElementById('productSearchInput');
+            const scannerInput = document.getElementById('barcodeScannerInput');
+            const btnScan = document.getElementById('btnScan');
+            const categoryTabs = document.getElementById('categoryTabs');
+            const productsGrid = document.getElementById('productsGrid');
+            const noProductsFound = document.getElementById('noProductsFound');
+
+            const emptyCartNotice = document.getElementById('emptyCartNotice');
+            const cartTableContainer = document.getElementById('cartTableContainer');
+            const cartItemsList = document.getElementById('cartItemsList');
+
+            const cartDiscountInput = document.getElementById('cartDiscountInput');
+            const cartTaxRateInput = document.getElementById('cartTaxRateInput');
+            const lblSubTotal = document.getElementById('lblSubTotal');
+            const lblTaxAmount = document.getElementById('lblTaxAmount');
+            const lblGrandTotal = document.getElementById('lblGrandTotal');
+            const btnCheckout = document.getElementById('btnCheckout');
+
+            const cashCalcBox = document.getElementById('cashCalcBox');
+            const cashReceivedInput = document.getElementById('cashReceivedInput');
+            const lblChangeDue = document.getElementById('lblChangeDue');
+
+            function generateUUID() {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            }
+
+            let selectedCategory = '';
+
+            async function loadProducts() {
+                const whId = warehouseSelect.value;
+                const term = searchInput.value.trim();
+                const cat = selectedCategory;
+
+                try {
+                    const res = await fetch(`/Pos/GetProducts?warehouseId=${whId}&searchTerm=${encodeURIComponent(term)}&categoryId=${cat}`);
+                    if (!res.ok) throw new Error('Failed to load products');
+                    const products = await res.json();
+                    renderProducts(products);
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            function renderProducts(products) {
+                productsGrid.innerHTML = '';
+                if (!products || products.length === 0) {
+                    noProductsFound.style.display = 'block';
+                    return;
+                }
+                noProductsFound.style.display = 'none';
+
+                products.forEach(p => {
+                    const col = document.createElement('div');
+                    col.className = 'col-sm-6 col-md-4 col-xl-3';
+
+                    const isBouquetRecipe = p.hasBouquetRecipe;
+                    const badgeClass = isBouquetRecipe ? 'bg-info text-dark' : (p.availableStock > 0 ? 'bg-success-subtle text-success border' : 'bg-danger-subtle text-danger border');
+                    const stockText = isBouquetRecipe ? '<i class="bi bi-flower1 me-1"></i>Recipe BOM' : `Stock: ${p.availableStock} ${p.unitSymbol}`;
+
+                    col.innerHTML = `
+                        <div class="card h-100 shadow-sm border-0 product-card p-2" data-id="${p.id}">
+                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                <span class="badge ${badgeClass} small">${stockText}</span>
+                                <small class="text-muted"><code>${p.sku}</code></small>
+                            </div>
+                            <h6 class="fw-bold text-dark mb-1 text-truncate" title="${p.name}">${p.name}</h6>
+                            <div class="d-flex justify-content-between align-items-center mt-auto pt-2">
+                                <span class="h5 fw-bold text-primary mb-0">$${p.unitPrice.toFixed(2)}</span>
+                                <button type="button" class="btn btn-sm btn-outline-primary btn-add-card">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+
+                    col.querySelector('.product-card').addEventListener('click', () => {
+                        addToCart(p);
+                    });
+
+                    productsGrid.appendChild(col);
+                });
+            }
+
+            function addToCart(product) {
+                const existing = cart.find(item => item.productId === product.id);
+                if (existing) {
+                    existing.quantity += 1;
+                } else {
+                    cart.push({
+                        productId: product.id,
+                        name: product.name,
+                        sku: product.sku,
+                        unitSymbol: product.unitSymbol,
+                        unitPrice: product.unitPrice,
+                        quantity: 1,
+                        discountAmount: 0,
+                        hasBouquetRecipe: product.hasBouquetRecipe
+                    });
+                }
+                renderCart();
+            }
+
+            function renderCart() {
+                if (cart.length === 0) {
+                    emptyCartNotice.style.display = 'block';
+                    cartTableContainer.style.display = 'none';
+                    btnCheckout.setAttribute('disabled', 'disabled');
+                } else {
+                    emptyCartNotice.style.display = 'none';
+                    cartTableContainer.style.display = 'block';
+                    btnCheckout.removeAttribute('disabled');
+                }
+
+                cartItemsList.innerHTML = '';
+                let subTotal = 0;
+
+                cart.forEach((item, index) => {
+                    const lineTotal = Math.max(0, (item.quantity * item.unitPrice) - item.discountAmount);
+                    subTotal += lineTotal;
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>
+                            <div class="fw-bold text-dark text-truncate" style="max-width: 140px;" title="${item.name}">${item.name}</div>
+                            <small class="text-muted">$${item.unitPrice.toFixed(2)} / ${item.unitSymbol}</small>
+                        </td>
+                        <td class="text-center">
+                            <div class="input-group input-group-sm">
+                                <button type="button" class="btn btn-outline-secondary px-1 btn-qty-minus" data-idx="${index}">-</button>
+                                <input type="number" step="any" min="0.0001" value="${item.quantity}" class="form-control text-center px-1 cart-qty-input" data-idx="${index}" />
+                                <button type="button" class="btn btn-outline-secondary px-1 btn-qty-plus" data-idx="${index}">+</button>
+                            </div>
+                        </td>
+                        <td class="text-end fw-bold text-dark">$${lineTotal.toFixed(2)}</td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm text-danger p-0 btn-remove-item" data-idx="${index}">
+                                <i class="bi bi-x-circle fs-6"></i>
+                            </button>
+                        </td>
+                    `;
+                    cartItemsList.appendChild(tr);
+                });
+
+                const globalDiscount = parseFloat(cartDiscountInput.value || '0');
+                const taxableSubtotal = Math.max(0, subTotal - globalDiscount);
+                const taxRate = parseFloat(cartTaxRateInput.value || '0');
+                const taxAmount = taxableSubtotal * (taxRate / 100);
+                const grandTotal = taxableSubtotal + taxAmount;
+
+                lblSubTotal.textContent = '$' + subTotal.toFixed(2);
+                lblTaxAmount.textContent = '$' + taxAmount.toFixed(2);
+                lblGrandTotal.textContent = '$' + grandTotal.toFixed(2);
+
+                updateChange(grandTotal);
+            }
+
+            function updateChange(grandTotal) {
+                const received = parseFloat(cashReceivedInput.value || '0');
+                const change = Math.max(0, received - grandTotal);
+                lblChangeDue.textContent = '$' + change.toFixed(2);
+            }
+
+            async function scanBarcode() {
+                const code = scannerInput.value.trim();
+                if (!code) return;
+
+                const whId = warehouseSelect.value;
+                try {
+                    const res = await fetch(`/Pos/Scan?code=${encodeURIComponent(code)}&warehouseId=${whId}`);
+                    if (!res.ok) {
+                        alert(`Item not found for code: '${code}'`);
+                        scannerInput.value = '';
+                        return;
+                    }
+                    const product = await res.json();
+                    addToCart(product);
+                    scannerInput.value = '';
+                    scannerInput.focus();
+                } catch (e) {
+                    alert('Error scanning item: ' + e.message);
+                }
+            }
+
+            scannerInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    scanBarcode();
+                }
+            });
+            btnScan.addEventListener('click', scanBarcode);
+
+            // Debounced search
+            let searchTimer;
+            searchInput.addEventListener('input', function () {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(loadProducts, 250);
+            });
+
+            // Category filter pills
+            categoryTabs.addEventListener('click', function (e) {
+                const pill = e.target.closest('.category-pill');
+                if (!pill) return;
+
+                categoryTabs.querySelectorAll('.category-pill').forEach(p => {
+                    p.className = 'btn btn-sm btn-outline-secondary category-pill text-nowrap';
+                });
+                pill.className = 'btn btn-sm btn-primary category-pill text-nowrap';
+
+                selectedCategory = pill.getAttribute('data-id');
+                loadProducts();
+            });
+
+            warehouseSelect.addEventListener('change', loadProducts);
+
+            // Cart list events (Qty + / -, remove, direct edit)
+            cartItemsList.addEventListener('click', function (e) {
+                const minus = e.target.closest('.btn-qty-minus');
+                const plus = e.target.closest('.btn-qty-plus');
+                const remove = e.target.closest('.btn-remove-item');
+
+                if (minus) {
+                    const idx = parseInt(minus.getAttribute('data-idx'));
+                    if (cart[idx].quantity > 1) {
+                        cart[idx].quantity -= 1;
+                    } else {
+                        cart.splice(idx, 1);
+                    }
+                    renderCart();
+                } else if (plus) {
+                    const idx = parseInt(plus.getAttribute('data-idx'));
+                    cart[idx].quantity += 1;
+                    renderCart();
+                } else if (remove) {
+                    const idx = parseInt(remove.getAttribute('data-idx'));
+                    cart.splice(idx, 1);
+                    renderCart();
+                }
+            });
+
+            cartItemsList.addEventListener('change', function (e) {
+                if (e.target.matches('.cart-qty-input')) {
+                    const idx = parseInt(e.target.getAttribute('data-idx'));
+                    const val = parseFloat(e.target.value || '1');
+                    if (val > 0) {
+                        cart[idx].quantity = val;
+                    }
+                    renderCart();
+                }
+            });
+
+            cartDiscountInput.addEventListener('input', renderCart);
+            cartTaxRateInput.addEventListener('input', renderCart);
+
+            // Cash calculations & quick cash buttons
+            document.querySelectorAll('.quick-cash').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const val = this.getAttribute('data-val');
+                    const grandTotal = parseFloat(lblGrandTotal.textContent.replace('$', ''));
+                    if (val === 'exact') {
+                        cashReceivedInput.value = grandTotal.toFixed(2);
+                    } else {
+                        cashReceivedInput.value = parseFloat(val).toFixed(2);
+                    }
+                    updateChange(grandTotal);
+                });
+            });
+
+            cashReceivedInput.addEventListener('input', function () {
+                const grandTotal = parseFloat(lblGrandTotal.textContent.replace('$', ''));
+                updateChange(grandTotal);
+            });
+
+            // Payment method change
+            document.querySelectorAll('input[name="payMethod"]').forEach(radio => {
+                radio.addEventListener('change', function () {
+                    if (this.value === 'Cash') {
+                        cashCalcBox.style.display = 'block';
+                    } else {
+                        cashCalcBox.style.display = 'none';
+                    }
+                });
+            });
+
+            // Checkout submission
+            btnCheckout.addEventListener('click', async function () {
+                if (cart.length === 0) return;
+
+                const grandTotal = parseFloat(lblGrandTotal.textContent.replace('$', ''));
+                const selectedMethod = document.querySelector('input[name="payMethod"]:checked').value;
+                const received = parseFloat(cashReceivedInput.value || '0');
+
+                if (selectedMethod === 'Cash' && received < grandTotal) {
+                    alert(`Cash received ($${received.toFixed(2)}) is less than total amount due ($${grandTotal.toFixed(2)})`);
+                    cashReceivedInput.focus();
+                    return;
+                }
+
+                btnCheckout.setAttribute('disabled', 'disabled');
+                btnCheckout.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+
+                const payload = {
+                    warehouseId: parseInt(warehouseSelect.value),
+                    customerId: customerSelect.value ? parseInt(customerSelect.value) : null,
+                    discountAmount: parseFloat(cartDiscountInput.value || '0'),
+                    taxRatePercentage: parseFloat(cartTaxRateInput.value || '0'),
+                    paymentMethod: selectedMethod,
+                    amountReceived: selectedMethod === 'Cash' ? received : grandTotal,
+                    idempotencyToken: currentIdempotencyToken,
+                    items: cart.map(item => ({
+                        productId: item.productId,
+                        quantity: item.quantity,
+                        unitPrice: item.unitPrice,
+                        discountAmount: item.discountAmount
+                    }))
+                };
+
+                try {
+                    const response = await fetch('/Pos/Checkout', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const res = await response.json();
+                    if (!res.success) {
+                        alert(res.errorMessage || 'Checkout failed.');
+                        btnCheckout.removeAttribute('disabled');
+                        btnCheckout.innerHTML = '<i class="bi bi-check2-circle me-1"></i> Complete Sale & Pay';
+                        return;
+                    }
+
+                    // Success! Display receipt modal
+                    document.getElementById('receiptGrandTotal').textContent = '$' + res.grandTotal.toFixed(2);
+                    document.getElementById('receiptInvoiceNumber').textContent = 'Invoice: ' + res.invoiceNumber;
+                    document.getElementById('receiptMethod').textContent = res.paymentMethod;
+                    document.getElementById('receiptReceived').textContent = '$' + res.amountReceived.toFixed(2);
+                    document.getElementById('receiptChange').textContent = '$' + res.changeGiven.toFixed(2);
+                    document.getElementById('btnOpenReceipt').href = '/Pos/Receipt/' + res.invoiceId;
+
+                    const receiptModal = new bootstrap.Modal(document.getElementById('receiptModal'));
+                    receiptModal.show();
+
+                    // Reset cart and generate new idempotency token for next transaction
+                    cart = [];
+                    currentIdempotencyToken = generateUUID();
+                    cartDiscountInput.value = '0.00';
+                    cashReceivedInput.value = '0.00';
+                    renderCart();
+                    loadProducts();
+                } catch (err) {
+                    alert('Error connecting to server: ' + err.message);
+                } finally {
+                    btnCheckout.removeAttribute('disabled');
+                    btnCheckout.innerHTML = '<i class="bi bi-check2-circle me-1"></i> Complete Sale & Pay';
+                }
+            });
+
+            // Quick add customer modal
+            document.getElementById('btnSaveQuickCustomer').addEventListener('click', async function () {
+                const name = document.getElementById('quickCustomerName').value.trim();
+                const phone = document.getElementById('quickCustomerPhone').value.trim();
+                const email = document.getElementById('quickCustomerEmail').value.trim();
+
+                if (!name) {
+                    alert('Customer name is required.');
+                    return;
+                }
+
+                try {
+                    const res = await fetch('/Customers/QuickCreateAjax', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, phone, email, isActive: true })
+                    });
+                    if (!res.ok) throw new Error('Failed to create customer.');
+                    const data = await res.json();
+
+                    const opt = document.createElement('option');
+                    opt.value = data.id;
+                    opt.textContent = `${data.name} (${phone || 'No Phone'})`;
+                    opt.selected = true;
+                    customerSelect.appendChild(opt);
+
+                    bootstrap.Modal.getInstance(document.getElementById('quickCustomerModal')).hide();
+                } catch (e) {
+                    alert('Error adding customer: ' + e.message);
+                }
+            });
+
+            // Initial load
+            loadProducts();
+        });
+    </script>
+}

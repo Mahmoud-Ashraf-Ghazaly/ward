@@ -16,5 +16,6 @@ namespace ward.Constants
         public const string ProcessSales = "ProcessSales";
         public const string ProcessReturns = "ProcessReturns";
         public const string ViewAuditAndReports = "ViewAuditAndReports";
+        public const string ApproveStocktaking = "ApproveStocktaking";
     }
 }

@@ -1,0 +1,170 @@
+@model ward.Models.Inventory.StocktakingReviewViewModel
+@using ward.Entities.Enums
+
+@{
+    ViewData["Title"] = $"Review Stocktaking: {Model.StocktakingNumber}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <h1 class="h2 text-warning text-dark fw-bold mb-0">
+                <i class="bi bi-shield-check me-2 text-warning"></i>Review & Approve: @Model.StocktakingNumber
+            </h1>
+            <span class="badge bg-warning text-dark fs-6">@Model.Status</span>
+        </div>
+        <p class="text-muted mb-0">Warehouse: <strong>@Model.WarehouseName</strong> &bull; Started: @Model.StartDateUtc.ToString("dd MMM yyyy, hh:mm tt") UTC</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Count" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
+            <i class="bi bi-pencil me-1"></i> Adjust Counts
+        </a>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-x-circle me-1"></i> Cancel
+        </a>
+    </div>
+</div>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Summary Variance Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 border-start border-danger border-4">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold">Total Shortage</div>
+                <div class="h3 fw-bold text-danger mb-0">-@Model.TotalShortageQuantity.ToString("G29") units</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 border-start border-success border-4">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold">Total Surplus</div>
+                <div class="h3 fw-bold text-success mb-0">+@Model.TotalSurplusQuantity.ToString("G29") units</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 border-start border-primary border-4">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold">Net Difference</div>
+                <div class="h3 fw-bold @(Model.NetDifferenceQuantity < 0 ? "text-danger" : (Model.NetDifferenceQuantity > 0 ? "text-success" : "text-dark")) mb-0">
+                    @(Model.NetDifferenceQuantity > 0 ? $"+{Model.NetDifferenceQuantity:G29}" : Model.NetDifferenceQuantity.ToString("G29")) units
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 border-start border-info border-4">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold">Cost Variance Impact</div>
+                <div class="h3 fw-bold @(Model.TotalVarianceCost < 0 ? "text-danger" : (Model.TotalVarianceCost > 0 ? "text-success" : "text-dark")) mb-0">
+                    $@Model.TotalVarianceCost.ToString("F2")
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white py-3">
+        <h5 class="card-title mb-0 fw-bold text-dark">
+            <i class="bi bi-table me-2 text-primary"></i>Items Count Reconciliation & In-Progress Variations
+        </h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Product</th>
+                    <th>SKU</th>
+                    <th class="text-center">Count Snapshot</th>
+                    <th class="text-center">Counted Qty</th>
+                    <th class="text-center">Variance (Shortage/Surplus)</th>
+                    <th class="text-center">Current Live Stock</th>
+                    <th class="text-end">Unit Cost</th>
+                    <th class="text-end">Financial Impact</th>
+                    <th>Reason</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var line in Model.Lines)
+                {
+                    <tr class="@(line.DifferenceQuantity != 0 ? (line.DifferenceQuantity < 0 ? "table-danger-subtle" : "table-success-subtle") : "")">
+                        <td class="fw-bold text-dark">
+                            @line.ProductName
+                            @if (line.HasConcurrentMovements)
+                            {
+                                <span class="badge bg-warning text-dark d-block mt-1 small" title="Stock changed by sales or receipts while count was underway">
+                                    <i class="bi bi-arrow-left-right me-1"></i>Concurrent change: @line.ConcurrentMovementDelta.ToString("+0.####;-0.####;0")
+                                </span>
+                            }
+                        </td>
+                        <td><code>@line.ProductSKU</code></td>
+                        <td class="text-center text-muted">@line.SystemQuantity.ToString("G29") @line.UnitSymbol</td>
+                        <td class="text-center fw-bold text-dark">@line.CountedQuantity.ToString("G29") @line.UnitSymbol</td>
+                        <td class="text-center fw-bold">
+                            @if (line.DifferenceQuantity < 0)
+                            {
+                                <span class="badge bg-danger">Shortage: @line.DifferenceQuantity.ToString("G29")</span>
+                            }
+                            else if (line.DifferenceQuantity > 0)
+                            {
+                                <span class="badge bg-success">Surplus: +@line.DifferenceQuantity.ToString("G29")</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Exact Match</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            <span class="fw-bold @(line.HasConcurrentMovements ? "text-primary" : "text-muted")">
+                                @line.CurrentSystemQuantity.ToString("G29") @line.UnitSymbol
+                            </span>
+                        </td>
+                        <td class="text-end text-muted small">$@line.UnitCost.ToString("F2")</td>
+                        <td class="text-end fw-bold @(line.VarianceCost < 0 ? "text-danger" : (line.VarianceCost > 0 ? "text-success" : "text-muted"))">
+                            $@line.VarianceCost.ToString("F2")
+                        </td>
+                        <td class="small text-muted">@(string.IsNullOrWhiteSpace(line.Reason) ? "-" : line.Reason)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Approval Form -->
+<div class="card shadow-sm border-0 border-top border-warning border-4 mb-5">
+    <div class="card-body p-4">
+        <h5 class="fw-bold text-dark mb-3"><i class="bi bi-shield-lock me-2 text-warning"></i>Authorized Manager Approval</h5>
+        <form asp-action="Approve" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Id" />
+            <input type="hidden" name="idempotencyToken" value="@Model.IdempotencyToken" />
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Managerial Approval Remarks</label>
+                <textarea name="approvalNotes" class="form-control" rows="2" placeholder="e.g. Variances reviewed and approved for year-end inventory write-offs..."></textarea>
+            </div>
+
+            <div class="alert alert-warning small mb-4">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                <strong>Notice:</strong> Approving this session will atomically apply inventory adjustments to warehouse stock and record immutable entries in the <code>StockMovement</code> audit ledger.
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+                <button type="submit" class="btn btn-warning text-dark fw-bold px-4 shadow-sm" onclick="return confirm('Are you sure you want to approve this stocktaking session and adjust inventory?');">
+                    <i class="bi bi-check-all me-1"></i> Approve & Post Adjustments
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

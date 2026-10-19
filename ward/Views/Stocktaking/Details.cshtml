@@ -1,0 +1,186 @@
+@model ward.Models.Inventory.StocktakingDetailsViewModel
+@using ward.Entities.Enums
+
+@{
+    ViewData["Title"] = $"Stocktaking Session {Model.StocktakingNumber}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <h1 class="h2 text-primary fw-bold mb-0">
+                <i class="bi bi-clipboard-data me-2"></i>@Model.StocktakingNumber
+            </h1>
+            <span class="badge @(Model.Status switch {
+                StocktakingStatus.Posted => "bg-success",
+                StocktakingStatus.Reviewed => "bg-warning text-dark",
+                StocktakingStatus.Counting => "bg-primary",
+                StocktakingStatus.Cancelled => "bg-danger",
+                _ => "bg-secondary"
+            }) fs-6">@Model.Status</span>
+        </div>
+        <p class="text-muted mb-0">Warehouse: <strong>@Model.WarehouseName</strong> &bull; Initiated on @Model.StartDateUtc.ToString("dd MMM yyyy, hh:mm tt") UTC</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Sessions
+        </a>
+        @if (Model.Status == StocktakingStatus.Counting)
+        {
+            <a asp-action="Count" asp-route-id="@Model.Id" class="btn btn-primary">
+                <i class="bi bi-pencil me-1"></i> Continue Count
+            </a>
+        }
+        else if (Model.Status == StocktakingStatus.Reviewed)
+        {
+            <a asp-action="Review" asp-route-id="@Model.Id" class="btn btn-warning text-dark fw-bold">
+                <i class="bi bi-shield-check me-1"></i> Review & Approve
+            </a>
+        }
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Info Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 border-top border-primary border-3">
+            <div class="card-body">
+                <h6 class="card-title text-muted fw-bold text-uppercase small mb-2">Audit Session Info</h6>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Initiated By:</span>
+                    <span class="fw-bold">@(Model.CreatedByUserId ?? "System")</span>
+                </div>
+                @if (Model.ApprovedDateUtc.HasValue)
+                {
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Approved Date:</span>
+                        <span class="fw-bold">@Model.ApprovedDateUtc.Value.ToString("dd MMM yyyy, hh:mm tt")</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Approved By:</span>
+                        <span class="fw-bold text-success">@Model.ApprovedByUserId</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 border-top border-danger border-3">
+            <div class="card-body">
+                <h6 class="card-title text-muted fw-bold text-uppercase small mb-2">Physical Variances</h6>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Total Shortages:</span>
+                    <span class="fw-bold text-danger">-@Model.TotalShortageQuantity.ToString("G29") units</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Total Surpluses:</span>
+                    <span class="fw-bold text-success">+@Model.TotalSurplusQuantity.ToString("G29") units</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Net Difference:</span>
+                    <span class="fw-bold @(Model.NetDifferenceQuantity < 0 ? "text-danger" : "text-success")">
+                        @(Model.NetDifferenceQuantity > 0 ? $"+{Model.NetDifferenceQuantity:G29}" : Model.NetDifferenceQuantity.ToString("G29")) units
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 border-top border-success border-3">
+            <div class="card-body">
+                <h6 class="card-title text-muted fw-bold text-uppercase small mb-2">Financial Valuation Impact</h6>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Total Valuation Variance:</span>
+                    <span class="fs-4 fw-bold @(Model.TotalVarianceCost < 0 ? "text-danger" : (Model.TotalVarianceCost > 0 ? "text-success" : "text-muted"))">
+                        $@Model.TotalVarianceCost.ToString("F2")
+                    </span>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Model.Reason))
+                {
+                    <div class="small text-muted border-top pt-2">
+                        <strong>Reason:</strong> @Model.Reason
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.Notes))
+{
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <h6 class="fw-bold text-muted text-uppercase small mb-1"><i class="bi bi-sticky me-1"></i>Audit Notes & Remarks</h6>
+            <p class="mb-0 text-dark">@Model.Notes</p>
+        </div>
+    </div>
+}
+
+<div class="card shadow-sm border-0 mb-5">
+    <div class="card-header bg-white py-3">
+        <h5 class="card-title mb-0 fw-bold text-dark">
+            <i class="bi bi-list-nested me-2 text-primary"></i>Counted Product Lines (@Model.Lines.Count)
+        </h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Product</th>
+                    <th>Category</th>
+                    <th class="text-center">System Snapshot</th>
+                    <th class="text-center">Counted Qty</th>
+                    <th class="text-center">Variance</th>
+                    <th class="text-center">Adjusted Live Stock</th>
+                    <th class="text-end">Unit Cost</th>
+                    <th class="text-end">Cost Variance</th>
+                    <th>Reason</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var line in Model.Lines)
+                {
+                    <tr>
+                        <td>
+                            <div class="fw-bold text-dark">@line.ProductName</div>
+                            <small class="text-muted"><code>@line.ProductSKU</code></small>
+                        </td>
+                        <td><span class="badge bg-light text-dark border">@line.CategoryName</span></td>
+                        <td class="text-center">@line.SystemQuantity.ToString("G29") @line.UnitSymbol</td>
+                        <td class="text-center fw-bold">@line.CountedQuantity.ToString("G29") @line.UnitSymbol</td>
+                        <td class="text-center fw-bold">
+                            @if (line.DifferenceQuantity < 0)
+                            {
+                                <span class="badge bg-danger">Shortage: @line.DifferenceQuantity.ToString("G29")</span>
+                            }
+                            else if (line.DifferenceQuantity > 0)
+                            {
+                                <span class="badge bg-success">Surplus: +@line.DifferenceQuantity.ToString("G29")</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">0</span>
+                            }
+                        </td>
+                        <td class="text-center fw-bold text-primary">
+                            @line.CurrentSystemQuantity.ToString("G29") @line.UnitSymbol
+                        </td>
+                        <td class="text-end text-muted small">$@line.UnitCost.ToString("F2")</td>
+                        <td class="text-end fw-bold @(line.VarianceCost < 0 ? "text-danger" : (line.VarianceCost > 0 ? "text-success" : "text-muted"))">
+                            $@line.VarianceCost.ToString("F2")
+                        </td>
+                        <td class="small text-muted">@(string.IsNullOrWhiteSpace(line.Reason) ? "-" : line.Reason)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,117 @@
+@model ward.Models.Reports.CustomerSupplierBalancesReportViewModel
+
+@{
+    ViewData["Title"] = "Customer & Supplier Balances Report";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+        <h1 class="h2 text-primary fw-bold mb-1">
+            <i class="bi bi-person-lines-fill me-2"></i>Customer & Supplier Balances Report
+        </h1>
+        <p class="text-muted mb-0">Consolidated receivables owed by customers and payables due to suppliers.</p>
+    </div>
+    <div>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Reports Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 border-start border-primary border-4">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold">Total Customer Receivables</div>
+                <div class="h3 fw-bold text-primary mb-0">$@Model.TotalCustomerReceivables.ToString("F2")</div>
+                <small class="text-muted">Unpaid customer invoices</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 border-start border-danger border-4">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold">Total Supplier Payables</div>
+                <div class="h3 fw-bold text-danger mb-0">$@Model.TotalSupplierPayables.ToString("F2")</div>
+                <small class="text-muted">Outstanding vendor debts</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Customers Table -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white py-3">
+        <h5 class="card-title mb-0 fw-bold text-dark">
+            <i class="bi bi-people me-2 text-primary"></i>Customer Accounts & Receivables (@Model.Customers.Count)
+        </h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Customer Name</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th class="text-end">Total Invoiced</th>
+                    <th class="text-end">Total Paid</th>
+                    <th class="text-end">Outstanding Balance</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in Model.Customers)
+                {
+                    <tr>
+                        <td class="fw-bold text-dark">@c.CustomerName</td>
+                        <td>@(string.IsNullOrWhiteSpace(c.Phone) ? "-" : c.Phone)</td>
+                        <td>@(string.IsNullOrWhiteSpace(c.Email) ? "-" : c.Email)</td>
+                        <td class="text-end">$@c.TotalInvoiced.ToString("F2")</td>
+                        <td class="text-end text-success">$@c.TotalPaid.ToString("F2")</td>
+                        <td class="text-end fw-bold @(c.OutstandingBalance > 0 ? "text-danger" : "text-muted")">
+                            $@c.OutstandingBalance.ToString("F2")
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Suppliers Table -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white py-3">
+        <h5 class="card-title mb-0 fw-bold text-dark">
+            <i class="bi bi-truck me-2 text-danger"></i>Supplier Accounts & Payables (@Model.Suppliers.Count)
+        </h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Supplier Name</th>
+                    <th>Contact Person</th>
+                    <th>Phone</th>
+                    <th class="text-end">Total Billed</th>
+                    <th class="text-end">Total Paid</th>
+                    <th class="text-end">Current Balance Due</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Model.Suppliers)
+                {
+                    <tr>
+                        <td class="fw-bold text-dark">@s.SupplierName</td>
+                        <td>@(string.IsNullOrWhiteSpace(s.ContactPerson) ? "-" : s.ContactPerson)</td>
+                        <td>@(string.IsNullOrWhiteSpace(s.Phone) ? "-" : s.Phone)</td>
+                        <td class="text-end">$@s.TotalInvoiced.ToString("F2")</td>
+                        <td class="text-end text-success">$@s.TotalPaid.ToString("F2")</td>
+                        <td class="text-end fw-bold @(s.CurrentBalance > 0 ? "text-danger" : "text-muted")">
+                            $@s.CurrentBalance.ToString("F2")
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

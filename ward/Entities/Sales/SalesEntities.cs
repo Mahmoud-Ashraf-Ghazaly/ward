@@ -13,6 +13,7 @@ namespace ward.Entities.Sales
         public string? Phone { get; set; }
         public string? Email { get; set; }
         public string? Address { get; set; }
+        public bool IsActive { get; set; } = true;
         public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 
         public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
@@ -36,6 +37,11 @@ namespace ward.Entities.Sales
         public decimal DiscountAmount { get; set; }
         public decimal GrandTotal { get; set; }
         public decimal PaidAmount { get; set; }
+        public decimal AmountReceived { get; set; } = 0;
+        public decimal ChangeGiven { get; set; } = 0;
+
+        public string? IdempotencyToken { get; set; }
+        public string? CreatedByUserId { get; set; }
 
         public string? Notes { get; set; }
         public byte[]? RowVersion { get; set; }
@@ -64,8 +70,24 @@ namespace ward.Entities.Sales
         public decimal DiscountAmount { get; set; }
         public decimal LineTotal { get; set; }
         public decimal ReturnedQuantity { get; set; } = 0;
+        public bool IsBouquetRecipeDeduction { get; set; } = false;
 
         public ICollection<ReturnItem> ReturnItems { get; set; } = new List<ReturnItem>();
+        public ICollection<InvoiceItemComponentConsumption> ComponentConsumptions { get; set; } = new List<InvoiceItemComponentConsumption>();
+    }
+
+    public class InvoiceItemComponentConsumption
+    {
+        public int Id { get; set; }
+
+        public int InvoiceItemId { get; set; }
+        public InvoiceItem InvoiceItem { get; set; } = null!;
+
+        public int ComponentProductId { get; set; }
+        public Product ComponentProduct { get; set; } = null!;
+
+        public decimal QuantityConsumed { get; set; }
+        public decimal UnitCost { get; set; }
     }
 
     public class InvoiceReturn
@@ -80,6 +102,10 @@ namespace ward.Entities.Sales
         public string? Reason { get; set; }
         public decimal TotalRefundAmount { get; set; }
         public ReturnStatus Status { get; set; } = ReturnStatus.Draft;
+        public string? RefundMethod { get; set; } = "Cash"; // Cash, Card, CustomerCredit
+        public string? Notes { get; set; }
+        public string? IdempotencyToken { get; set; }
+        public string? CreatedByUserId { get; set; }
 
         public ICollection<ReturnItem> Items { get; set; } = new List<ReturnItem>();
     }
@@ -116,5 +142,6 @@ namespace ward.Entities.Sales
         public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;
         public string? ReferenceNumber { get; set; }
         public string? Notes { get; set; }
+        public string? CreatedByUserId { get; set; }
     }
 }

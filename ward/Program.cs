@@ -36,6 +36,9 @@ namespace ward
             builder.Services.AddScoped<ward.Services.Inventory.IInventoryService, ward.Services.Inventory.InventoryService>();
             builder.Services.AddScoped<ward.Services.Production.IBouquetService, ward.Services.Production.BouquetService>();
             builder.Services.AddScoped<ward.Services.Purchasing.IPurchaseService, ward.Services.Purchasing.PurchaseService>();
+            builder.Services.AddScoped<ward.Services.Sales.ISalesService, ward.Services.Sales.SalesService>();
+            builder.Services.AddScoped<ward.Services.Inventory.IStocktakingService, ward.Services.Inventory.StocktakingService>();
+            builder.Services.AddScoped<ward.Services.Reports.IReportingService, ward.Services.Reports.ReportingService>();
 
             builder.Services.AddAuthorization(options =>
             {
@@ -55,6 +58,9 @@ namespace ward
                     policy.RequireRole(ward.Constants.AppRoles.Admin, ward.Constants.AppRoles.Manager));
 
                 options.AddPolicy(ward.Constants.AppPolicies.ViewAuditAndReports, policy =>
+                    policy.RequireRole(ward.Constants.AppRoles.Admin, ward.Constants.AppRoles.Manager));
+
+                options.AddPolicy(ward.Constants.AppPolicies.ApproveStocktaking, policy =>
                     policy.RequireRole(ward.Constants.AppRoles.Admin, ward.Constants.AppRoles.Manager));
             });
 
