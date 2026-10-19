@@ -66,11 +66,25 @@ namespace ward.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(new PosCheckoutResultDto { Success = false, ErrorMessage = "Invalid checkout data." });
+                var errors = string.Join("; ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => !string.IsNullOrEmpty(e.ErrorMessage) ? e.ErrorMessage : e.Exception?.Message)
+                    .Where(msg => !string.IsNullOrEmpty(msg)));
+
+                return BadRequest(new PosCheckoutResultDto 
+                { 
+                    Success = false, 
+                    ErrorMessage = $"Invalid checkout data: {errors}" 
+                });
             }
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var result = await _salesService.ProcessCheckoutAsync(request, userId);
+
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
 
             return Json(result);
         }

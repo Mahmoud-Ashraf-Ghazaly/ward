@@ -242,6 +242,24 @@
             <button type="submit" class="btn-login" id="btn-signin">Sign In</button>
         </form>
 
+        <div class="demo-accounts" style="margin-top: 1.25rem; background: rgba(255,255,255,0.04); border-radius: 12px; padding: 0.85rem; border: 1px dashed rgba(255,255,255,0.15);">
+            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a78bfa; margin-bottom: 0.5rem; font-weight: 600;">⚡ Quick Demo Login (Click to Sign In)</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                <button type="button" onclick="fillDemo('admin@flowershop.local')" style="background: rgba(168,85,247,0.15); border: 1px solid rgba(168,85,247,0.4); color: #e9d5ff; border-radius: 8px; padding: 0.4rem 0.6rem; font-size: 0.75rem; cursor: pointer; text-align: left; transition: all 0.2s;">
+                    👑 <strong>Admin</strong><br/><span style="opacity: 0.7; font-size: 0.7rem;">Full Access</span>
+                </button>
+                <button type="button" onclick="fillDemo('manager@flowershop.local')" style="background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.4); color: #bfdbfe; border-radius: 8px; padding: 0.4rem 0.6rem; font-size: 0.75rem; cursor: pointer; text-align: left; transition: all 0.2s;">
+                    👔 <strong>Manager</strong><br/><span style="opacity: 0.7; font-size: 0.7rem;">Catalog & Reports</span>
+                </button>
+                <button type="button" onclick="fillDemo('cashier@flowershop.local')" style="background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.4); color: #a7f3d0; border-radius: 8px; padding: 0.4rem 0.6rem; font-size: 0.75rem; cursor: pointer; text-align: left; transition: all 0.2s;">
+                    💳 <strong>Cashier</strong><br/><span style="opacity: 0.7; font-size: 0.7rem;">POS & Sales</span>
+                </button>
+                <button type="button" onclick="fillDemo('inventory@flowershop.local')" style="background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.4); color: #fde68a; border-radius: 8px; padding: 0.4rem 0.6rem; font-size: 0.75rem; cursor: pointer; text-align: left; transition: all 0.2s;">
+                    📦 <strong>Inventory</strong><br/><span style="opacity: 0.7; font-size: 0.7rem;">Stock & Audits</span>
+                </button>
+            </div>
+        </div>
+
         <hr class="divider" />
         <p class="hint">Ward Flower Shop ERP &copy; 2026</p>
     </div>
@@ -249,5 +267,16 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
     <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script>
+        function fillDemo(email) {
+            var emailInput = document.querySelector('input[name="Email"]');
+            var passwordInput = document.querySelector('input[name="Password"]');
+            if (emailInput && passwordInput) {
+                emailInput.value = email;
+                passwordInput.value = 'Admin@123456';
+                document.getElementById('btn-signin').click();
+            }
+        }
+    </script>
 </body>
 </html>

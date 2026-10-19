@@ -64,29 +64,39 @@ namespace ward
                     policy.RequireRole(ward.Constants.AppRoles.Admin, ward.Constants.AppRoles.Manager));
             });
 
-            builder.Services.AddControllersWithViews();
+            builder.Services.AddControllersWithViews()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+                });
 
             var app = builder.Build();
 
-            // Seed database during development
-            if (app.Environment.IsDevelopment())
+            // Always run migrations and seed (works for both dev and production)
+            using (var scope = app.Services.CreateScope())
             {
-                using var scope = app.Services.CreateScope();
-                var initializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>();
-                initializer.InitializeAsync().GetAwaiter().GetResult();
+                try
+                {
+                    var initializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>();
+                    initializer.InitializeAsync().GetAwaiter().GetResult();
+                }
+                catch (Exception ex)
+                {
+                    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+                    logger.LogError(ex, "An error occurred during database initialization/seeding.");
+                }
             }
 
             // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
 
             app.UseStatusCodePagesWithReExecute("/Home/Error", "?statusCode={0}");
 
-            app.UseHttpsRedirection();
+            // Note: HTTPS redirect disabled — MonsterASP.NET/IIS handles SSL at the hosting layer
             app.UseStaticFiles();
 
             app.UseRouting();

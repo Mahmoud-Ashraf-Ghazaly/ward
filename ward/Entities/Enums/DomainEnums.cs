@@ -1,5 +1,8 @@
+using System.Text.Json.Serialization;
+
 namespace ward.Entities.Enums
 {
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum ProductType
     {
         FreshFlower = 1,
@@ -11,6 +14,7 @@ namespace ward.Entities.Enums
         Service = 7
     }
 
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum MovementType
     {
         PurchaseIn = 1,
@@ -25,6 +29,7 @@ namespace ward.Entities.Enums
         PurchaseReturnOut = 10
     }
 
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum PurchaseInvoiceStatus
     {
         Draft = 1,
@@ -34,6 +39,7 @@ namespace ward.Entities.Enums
         Cancelled = 5
     }
 
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum PurchaseReturnStatus
     {
         Draft = 1,
@@ -41,6 +47,7 @@ namespace ward.Entities.Enums
         Cancelled = 3
     }
 
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum InvoiceStatus
     {
         Draft = 1,
@@ -52,6 +59,7 @@ namespace ward.Entities.Enums
         FullyReturned = 7
     }
 
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum ReturnStatus
     {
         Draft = 1,
@@ -60,6 +68,7 @@ namespace ward.Entities.Enums
         Rejected = 4
     }
 
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum ReturnDisposition
     {
         Restocked = 1,     // Sellable (Restocked into inventory)
@@ -68,6 +77,7 @@ namespace ward.Entities.Enums
         Discarded = 4      // Discarded (Not restored to inventory)
     }
 
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum PaymentMethod
     {
         Cash = 1,
@@ -77,6 +87,7 @@ namespace ward.Entities.Enums
         GiftCard = 5
     }
 
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum StocktakingStatus
     {
         Draft = 1,
