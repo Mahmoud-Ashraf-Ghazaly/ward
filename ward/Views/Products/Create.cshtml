@@ -106,4 +106,38 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const barcodeInput = document.getElementById('Barcode');
+            let scanBuffer = '';
+            let scanLastTime = 0;
+            const SCAN_SPEED_MS = 65;
+
+            window.addEventListener('keydown', function (e) {
+                const now = Date.now();
+                const gap = now - scanLastTime;
+
+                if (e.key === 'Enter') {
+                    if (scanBuffer.length >= 3) {
+                        e.preventDefault();
+                        if (barcodeInput) barcodeInput.value = scanBuffer;
+                        scanBuffer = '';
+                        return false;
+                    }
+                }
+
+                if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                    if (gap <= SCAN_SPEED_MS || scanBuffer.length > 0) {
+                        e.preventDefault();
+                        scanBuffer += e.key;
+                        scanLastTime = now;
+                        if (barcodeInput) barcodeInput.value = scanBuffer;
+                        return false;
+                    }
+                    scanLastTime = now;
+                    scanBuffer = e.key;
+                }
+            }, true);
+        });
+    </script>
 }

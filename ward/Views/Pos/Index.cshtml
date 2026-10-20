@@ -8,15 +8,11 @@
 
 <style>
     /* Prevent global site footer from overlapping/pushing the POS interface */
-    footer.footer {
+    footer.footer, .app-footer {
         display: none !important;
     }
-    .container-fluid.px-4.py-4 {
-        padding-top: 0.5rem !important;
-        padding-bottom: 0.5rem !important;
-    }
-    main[role="main"] {
-        padding-bottom: 0 !important;
+    .app-content {
+        padding: 0.75rem 1rem 0.5rem !important;
     }
     .pos-container {
         height: calc(100vh - 85px);
@@ -71,6 +67,15 @@
                                 <input type="text" id="barcodeScannerInput" class="form-control" placeholder="Scan Barcode or Type SKU (Press Enter)..." autofocus autocomplete="off" />
                                 <button class="btn btn-outline-primary" type="button" id="btnScan">
                                     Scan
+                                </button>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 mt-1">
+                                <span id="scannerErrorBadge" class="badge bg-danger" style="display:none; font-size: 0.78rem;"></span>
+                                <span class="badge bg-light text-secondary border small" id="scannerShieldBadge" style="font-size: 0.72rem;">
+                                    <i class="bi bi-shield-check text-success me-1"></i>Scanner Protected
+                                </span>
+                                <button type="button" class="btn btn-sm btn-outline-info py-0 px-2 small" data-bs-toggle="modal" data-bs-target="#scannerDiagnosticModal" style="font-size: 0.72rem;">
+                                    <i class="bi bi-tools me-1"></i>Scanner Diagnostic & Fix
                                 </button>
                             </div>
                         </div>
@@ -322,6 +327,90 @@
     </div>
 </div>
 
+<!-- Scanner Diagnostic & Troubleshooting Modal -->
+<div class="modal fade" id="scannerDiagnosticModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-cpu me-2 text-info"></i>Scanner Diagnostics & Troubleshooting (معالج قارئ الباركود)</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Live Key Monitor Box -->
+                <div class="card border mb-3">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
+                        <span class="fw-bold small text-dark"><i class="bi bi-broadcast text-primary me-1"></i>Live Scanner Keystroke Monitor (شاشة فحص نبضات السكانر المباشرة)</span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 small" id="btnClearDiagLog">Clear</button>
+                    </div>
+                    <div class="card-body p-3 font-monospace" style="min-height: 110px; max-height: 160px; overflow-y: auto; background: #0f172a; color: #38bdf8; font-size: 0.85rem;" id="diagKeystrokeLog">
+                        <div class="text-secondary small">Awaiting barcode scan or keyboard input... (اسحب أي باركود الآن لتفحص ما يرسله السكانر)</div>
+                    </div>
+                </div>
+
+                <div id="diagWarningAlert" class="alert alert-danger d-none mb-3" role="alert">
+                    <h6 class="fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill me-2"></i>تم رصد زر F12 أو اختصار من جهاز السكانر!</h6>
+                    <p class="small mb-0">السكانر يرسل كود اختصار F12 مدمج مع الباركود. راجع الخطوة 2 أدناه لإلغائه من السكانر نهائياً.</p>
+                </div>
+
+                <!-- Guidance Accordion -->
+                <div class="accordion" id="diagAccordion">
+                    <!-- Step 1: Exit Phone Mode in Chrome -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button fw-bold text-primary" type="button" data-bs-toggle="collapse" data-bs-target="#step1Collapse">
+                                1️⃣ كيفية إلغاء وضع الفون وإغلاق نافذة الـ Network الحالية في المتصفح
+                            </button>
+                        </h2>
+                        <div id="step1Collapse" class="accordion-collapse collapse show" data-bs-parent="#diagAccordion">
+                            <div class="accordion-body small text-muted">
+                                <ol class="mb-0 ps-3">
+                                    <li class="mb-2"><strong>إلغاء وضع الفون:</strong> في أعلى يسار نافذة الـ DevTools (الموجودة بالأسفل)، اضغط على أيقونة الموبايل/التابلت 📱 الزرقاء (أو اضغط في الكيبورد <code>Ctrl + Shift + M</code>) لترجع الشاشة لعرضها الكامل الطبيعي.</li>
+                                    <li><strong>إغلاق شاشة الـ Network:</strong> اضغط على علامة <strong>[X]</strong> في أعلى يمين نافذة الـ DevTools بالأسفل لإغلاقها نهائياً.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Scanner Hardware Reset -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed fw-bold text-success" type="button" data-bs-toggle="collapse" data-bs-target="#step2Collapse">
+                                2️⃣ ضبط جهاز قارئ الباركود (الحل الجذري النهائي في 10 ثوانٍ)
+                            </button>
+                        </h2>
+                        <div id="step2Collapse" class="accordion-collapse collapse" data-bs-parent="#diagAccordion">
+                            <div class="accordion-body small text-muted">
+                                <p>أجهزة قارئ الباركود يتم ضبطها عبر باركودات خاصة في كتالوج الجهاز. كثير من الأجهزة تكون مبرمجة مسبقاً لإرسال زر <code>F12</code> لتناسب برامج كاشير قديمة.</p>
+                                <p class="mb-1 fw-bold text-dark">الحل السريع:</p>
+                                <p class="mb-0">افتح كتالوج قارئ الباركود المرفق مع الجهاز، واعمل سكان لباركود <strong>"Restore Factory Defaults"</strong> أو <strong>"Reset to Default"</strong> (استعادة ضبط المصنع). بمجرد قراءته، سيعمل السكانر ككيبورد نظيف يرسل أرقام الباركود فقط بدون F12.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Desktop App Mode -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed fw-bold text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#step3Collapse">
+                                3️⃣ تشغيل الـ POS كتطبيق ديسكتوب كاشير مستقل (Desktop Mode)
+                            </button>
+                        </h2>
+                        <div id="step3Collapse" class="accordion-collapse collapse" data-bs-parent="#diagAccordion">
+                            <div class="accordion-body small text-muted">
+                                <p>تم إنشاء ملف تشغيل سريع في مجلد المشروع باسم <code>Launch_FloraFlow_POS.bat</code>.</p>
+                                <p class="mb-0">عند النقر عليه مرتين، يفتح نظام الـ POS في نافذة ديسكتوب مخصصة بدون شريط عناوين المتصفح وبدون DevTools نهائياً كبرنامج كاشير احترافي متكامل.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light py-2">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -416,10 +505,11 @@
                 });
             }
 
-            function addToCart(product) {
+            // addToCart: Used by both manual click and barcode scanner
+            function addToCart(product, qtyToAdd = 1) {
                 const existing = cart.find(item => item.productId === product.id);
                 if (existing) {
-                    existing.quantity += 1;
+                    existing.quantity += qtyToAdd;
                 } else {
                     cart.push({
                         productId: product.id,
@@ -427,12 +517,15 @@
                         sku: product.sku,
                         unitSymbol: product.unitSymbol,
                         unitPrice: product.unitPrice,
-                        quantity: 1,
+                        quantity: qtyToAdd,
                         discountAmount: 0,
                         hasBouquetRecipe: product.hasBouquetRecipe
                     });
                 }
                 renderCart();
+                setTimeout(() => {
+                    if (scannerInput) scannerInput.focus();
+                }, 40);
             }
 
             function renderCart() {
@@ -499,34 +592,297 @@
                 lblChangeDue.textContent = '$' + change.toFixed(2);
             }
 
-            async function scanBarcode() {
-                const code = scannerInput.value.trim();
-                if (!code) return;
+            // ================================================================
+            // BULLETPROOF SCANNER ENGINE & SHORTCUT SHIELD
+            // ================================================================
+            let isScannerProcessing = false;
+            let scanBuffer = '';
+            let scanLastTime = 0;
+            let scanTimer = null;
+            let firstCharInput = null;
+            let firstCharOrigVal = '';
+            const SCAN_SPEED_MS = 65; // Characters arriving faster than 65ms = scanner
 
-                const whId = warehouseSelect.value;
+            function resetScanBuffer() {
+                scanBuffer = '';
+                scanLastTime = 0;
+                if (scanTimer) {
+                    clearTimeout(scanTimer);
+                    scanTimer = null;
+                }
+                firstCharInput = null;
+                firstCharOrigVal = '';
+            }
+
+            async function executeScan(code) {
+                code = (code || '').trim();
+                if (!code || isScannerProcessing) return;
+
+                isScannerProcessing = true;
+                if (scannerInput) {
+                    scannerInput.disabled = true;
+                    scannerInput.value = code;
+                }
+
+                const whId = warehouseSelect ? warehouseSelect.value : 1;
+                const statusBadge = document.getElementById('scannerErrorBadge');
+
                 try {
                     const res = await fetch(`/Pos/Scan?code=${encodeURIComponent(code)}&warehouseId=${whId}`);
                     if (!res.ok) {
-                        alert(`Item not found for code: '${code}'`);
-                        scannerInput.value = '';
+                        if (statusBadge) {
+                            statusBadge.className = 'badge bg-danger mt-1';
+                            statusBadge.innerHTML = `<i class="bi bi-exclamation-triangle me-1"></i>Not found: "${code}"`;
+                            statusBadge.style.display = 'inline-block';
+                            setTimeout(() => { statusBadge.style.display = 'none'; }, 3500);
+                        }
+                        if (scannerInput) scannerInput.value = '';
                         return;
                     }
+
                     const product = await res.json();
-                    addToCart(product);
-                    scannerInput.value = '';
-                    scannerInput.focus();
+                    addToCart(product, 1);
+
+                    if (statusBadge) {
+                        statusBadge.className = 'badge bg-success mt-1';
+                        statusBadge.innerHTML = `<i class="bi bi-check2-circle me-1"></i>Added: ${product.name}`;
+                        statusBadge.style.display = 'inline-block';
+                        setTimeout(() => { statusBadge.style.display = 'none'; }, 2000);
+                    }
+                    if (scannerInput) scannerInput.value = '';
                 } catch (e) {
-                    alert('Error scanning item: ' + e.message);
+                    console.error('Scanner error:', e);
+                } finally {
+                    if (scannerInput) {
+                        scannerInput.disabled = false;
+                        scannerInput.value = '';
+                        setTimeout(() => { scannerInput.focus(); }, 40);
+                    }
+                    isScannerProcessing = false;
+                    resetScanBuffer();
                 }
             }
 
-            scannerInput.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    scanBarcode();
+            // ── GLOBAL CAPTURE KEYDOWN INTERCEPTOR ──────────────────────────
+            window.addEventListener('keydown', function (e) {
+                // Live Diagnostic Logger
+                const diagLog = document.getElementById('diagKeystrokeLog');
+                if (diagLog) {
+                    const timeStr = new Date().toLocaleTimeString();
+                    const isFKey = e.key === 'F12' || (e.key && e.key.startsWith('F') && !isNaN(e.key.substring(1)));
+                    const isPhoneMode = (e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'M' || e.key === 'm');
+                    if (isFKey || isPhoneMode) {
+                        const alertBox = document.getElementById('diagWarningAlert');
+                        if (alertBox) alertBox.classList.remove('d-none');
+                    }
+                    const badge = (isFKey || isPhoneMode) ? '<span class="badge bg-danger">BLOCKED</span>' : '<span class="badge bg-secondary">KEY</span>';
+                    const div = document.createElement('div');
+                    div.className = 'py-1 border-bottom border-secondary border-opacity-25 small';
+                    div.innerHTML = `<span class="text-muted">[${timeStr}]</span> ${badge} <strong>Key:</strong> "${e.key}" | <strong>Code:</strong> ${e.code} | <strong>Modifiers:</strong> ${e.ctrlKey ? 'Ctrl+' : ''}${e.shiftKey ? 'Shift+' : ''}${e.altKey ? 'Alt+' : ''}`;
+                    if (diagLog.children.length === 1 && diagLog.firstElementChild.classList.contains('text-secondary')) {
+                        diagLog.innerHTML = '';
+                    }
+                    diagLog.prepend(div);
                 }
-            });
-            btnScan.addEventListener('click', scanBarcode);
+
+                // 1. HARD BLOCK DEVTOOLS & BROWSER SHORTCUTS
+                if (e.key === 'F12' || e.keyCode === 123 || (e.key && e.key.startsWith('F') && !isNaN(e.key.substring(1)))) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    return false;
+                }
+
+                // Block Ctrl+Shift+... (M = Phone View, I = DevTools, J = Console, C = Inspect)
+                if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    return false;
+                }
+
+                // Block Ctrl+M (Carriage return sent as control character by scanners)
+                if ((e.ctrlKey || e.metaKey) && (e.key === 'm' || e.key === 'M' || e.keyCode === 77)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    if (scanBuffer.length >= 2) {
+                        executeScan(scanBuffer);
+                    }
+                    return false;
+                }
+
+                // Block Ctrl+F, Ctrl+P, Ctrl+S, Ctrl+U, Ctrl+H, Ctrl+J (Allow only clipboard shortcuts)
+                if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) {
+                    const k = (e.key || '').toLowerCase();
+                    if (k !== 'c' && k !== 'v' && k !== 'x' && k !== 'a' && k !== 'z') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
+                        return false;
+                    }
+                }
+
+                // 2. SCANNER SPEED DETECTION & HIJACK PROTECTION
+                const activeEl = document.activeElement;
+                const isScannerInput = (activeEl === scannerInput);
+                const isModalOpen = document.querySelector('.modal.show') !== null;
+                if (isModalOpen) return;
+
+                const now = Date.now();
+                const gap = now - scanLastTime;
+
+                // Handle Enter:
+                if (e.key === 'Enter') {
+                    if (scanBuffer.length >= 2) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
+                        const barcode = scanBuffer;
+                        resetScanBuffer();
+                        executeScan(barcode);
+                        return false;
+                    }
+                    if (isScannerInput && scannerInput.value.trim()) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
+                        const val = scannerInput.value.trim();
+                        scannerInput.value = '';
+                        executeScan(val);
+                        return false;
+                    }
+                    // If enter inside a quantity input in the cart, blur it and focus scannerInput
+                    if (activeEl && activeEl.classList.contains('cart-qty-input')) {
+                        e.preventDefault();
+                        activeEl.blur();
+                        if (scannerInput) scannerInput.focus();
+                        return false;
+                    }
+                    return;
+                }
+
+                // Handle Single Printable Characters:
+                if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                    const isFast = (gap <= SCAN_SPEED_MS);
+
+                    if (isFast || scanBuffer.length > 0) {
+                        // SCANNER STREAM DETECTED!
+                        e.preventDefault();
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
+
+                        // If the first char slipped into a non-scanner field (e.g. qty box), roll it back!
+                        if (firstCharInput && firstCharInput !== scannerInput) {
+                            firstCharInput.value = firstCharOrigVal;
+                            firstCharInput.dispatchEvent(new Event('input', { bubbles: true }));
+                            firstCharInput = null;
+                        }
+
+                        scanBuffer += e.key;
+                        scanLastTime = now;
+
+                        if (scannerInput) {
+                            scannerInput.value = scanBuffer;
+                        }
+
+                        // Auto-process if scanner doesn't send Enter suffix
+                        if (scanTimer) clearTimeout(scanTimer);
+                        scanTimer = setTimeout(function () {
+                            if (scanBuffer.length >= 3) {
+                                const barcode = scanBuffer;
+                                resetScanBuffer();
+                                executeScan(barcode);
+                            } else {
+                                resetScanBuffer();
+                            }
+                        }, 130);
+
+                        return false;
+                    }
+
+                    // Slow character:
+                    // If typing in an input/textarea, remember initial state in case this was 1st char of a scan
+                    if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
+                        scanLastTime = now;
+                        scanBuffer = e.key;
+                        firstCharInput = activeEl;
+                        firstCharOrigVal = activeEl.value;
+                        return;
+                    }
+
+                    // If NO input is focused, redirect key into scanner input
+                    if (!isScannerInput) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
+                        if (scannerInput) {
+                            scannerInput.focus();
+                            scannerInput.value = e.key;
+                        }
+                        scanBuffer = e.key;
+                        scanLastTime = now;
+                        firstCharInput = scannerInput;
+                        firstCharOrigVal = '';
+                        return false;
+                    } else {
+                        scanLastTime = now;
+                        scanBuffer = scannerInput.value + e.key;
+                    }
+                }
+            }, true);
+
+            // Button click scanner
+            if (btnScan) {
+                btnScan.addEventListener('click', function () {
+                    const val = scannerInput ? scannerInput.value.trim() : '';
+                    if (val) executeScan(val);
+                });
+            }
+
+            // Diagnostic log clear button
+            const btnClearDiag = document.getElementById('btnClearDiagLog');
+            if (btnClearDiag) {
+                btnClearDiag.addEventListener('click', function () {
+                    const log = document.getElementById('diagKeystrokeLog');
+                    if (log) log.innerHTML = '<div class="text-secondary small">Log cleared. Awaiting barcode scan...</div>';
+                    const alertBox = document.getElementById('diagWarningAlert');
+                    if (alertBox) alertBox.classList.add('d-none');
+                });
+            }
+
+            // Scanner input blur focus guard
+            function isLegitFocused() {
+                const el = document.activeElement;
+                if (!el) return false;
+                const tag = el.tagName;
+                if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+                if (tag === 'BUTTON' || tag === 'A') return true;
+                if (el.closest('.modal.show')) return true;
+                return false;
+            }
+
+            function isModalOpen() {
+                return document.querySelector('.modal.show') !== null;
+            }
+
+            if (scannerInput) {
+                scannerInput.addEventListener('blur', function () {
+                    setTimeout(function () {
+                        if (!isLegitFocused() && !isModalOpen()) {
+                            scannerInput.focus();
+                        }
+                    }, 100);
+                });
+            }
+
+            // Periodic focus guard
+            setInterval(function () {
+                if (!isLegitFocused() && !isModalOpen() && document.visibilityState === 'visible') {
+                    if (scannerInput) scannerInput.focus();
+                }
+            }, 500);
+
 
             // Debounced search
             let searchTimer;
@@ -547,9 +903,13 @@
 
                 selectedCategory = pill.getAttribute('data-id');
                 loadProducts();
+                if (scannerInput) setTimeout(() => scannerInput.focus(), 30);
             });
 
-            warehouseSelect.addEventListener('change', loadProducts);
+            warehouseSelect.addEventListener('change', function () {
+                loadProducts();
+                if (scannerInput) setTimeout(() => scannerInput.focus(), 30);
+            });
 
             // Cart list events (Qty + / -, remove, direct edit)
             cartItemsList.addEventListener('click', function (e) {
@@ -565,14 +925,17 @@
                         cart.splice(idx, 1);
                     }
                     renderCart();
+                    if (scannerInput) setTimeout(() => scannerInput.focus(), 30);
                 } else if (plus) {
                     const idx = parseInt(plus.getAttribute('data-idx'));
                     cart[idx].quantity += 1;
                     renderCart();
+                    if (scannerInput) setTimeout(() => scannerInput.focus(), 30);
                 } else if (remove) {
                     const idx = parseInt(remove.getAttribute('data-idx'));
                     cart.splice(idx, 1);
                     renderCart();
+                    if (scannerInput) setTimeout(() => scannerInput.focus(), 30);
                 }
             });
 
@@ -584,6 +947,7 @@
                         cart[idx].quantity = val;
                     }
                     renderCart();
+                    if (scannerInput) setTimeout(() => scannerInput.focus(), 30);
                 }
             });
 

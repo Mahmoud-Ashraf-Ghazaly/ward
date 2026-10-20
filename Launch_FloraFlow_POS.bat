@@ -1,0 +1,3 @@
+@echo off
+echo Starting FloraFlow POS in Dedicated Desktop Mode...
+start "" chrome.exe --app=http://localhost:5233/Pos

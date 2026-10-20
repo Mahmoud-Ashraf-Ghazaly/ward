@@ -2,137 +2,224 @@
     ViewData["Title"] = "Dashboard";
 }
 
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="p-4 bg-white rounded shadow-sm border-start border-4 border-success">
-            <h1 class="h3 fw-bold text-dark mb-1">Flower Shop Management System (FloraFlow)</h1>
-            <p class="text-muted mb-0">Robust architecture powered by ASP.NET Core MVC, Entity Framework Core, SQL Server, and ASP.NET Core Identity.</p>
+<!-- Welcome Hero Banner -->
+<div class="card mb-4 border-0 text-white overflow-hidden shadow-sm" style="background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);">
+    <div class="card-body p-4 p-lg-5 position-relative">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <span class="badge bg-warning text-dark fw-bold px-3 py-1.5 mb-2 rounded-pill">
+                    🌸 FloraFlow Floral OS & POS
+                </span>
+                <h1 class="display-6 fw-bold mb-2">Welcome to FloraFlow Studio</h1>
+                <p class="text-light opacity-75 mb-4 fs-6" style="max-width: 650px;">
+                    A modern cloud-powered ERP for floral retail. Manage bouquet recipes (BOM), track cold-room inventory, run fast POS checkouts, and calculate costs with Weighted Average Costing (WAC).
+                </p>
+                <div class="d-flex flex-wrap gap-2">
+                    <a asp-controller="Pos" asp-action="Index" class="btn btn-warning fw-bold px-4 py-2 shadow-sm">
+                        <i class="bi bi-cart3 me-1"></i> Open POS Cashier
+                    </a>
+                    <a asp-controller="Products" asp-action="Index" class="btn btn-outline-light px-3 py-2">
+                        <i class="bi bi-flower1 me-1"></i> Flower Catalog
+                    </a>
+                    <a asp-controller="Reports" asp-action="Index" class="btn btn-outline-light px-3 py-2">
+                        <i class="bi bi-graph-up-arrow me-1"></i> Financial Reports
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-4 text-center d-none d-lg-block">
+                <span style="font-size: 7rem; filter: drop-shadow(0 15px 25px rgba(244, 63, 94, 0.3));">💐</span>
+            </div>
         </div>
     </div>
 </div>
 
+<!-- Key Architectural Highlights / Metrics Grid -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card h-100 border-0 shadow-sm border-start border-4 border-success">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-bold text-uppercase">Database Engine</span>
+                <span class="badge bg-success-subtle text-success">SQL Server</span>
+            </div>
+            <h3 class="fw-bold mb-1 text-dark">EF Core 8.0</h3>
+            <p class="text-muted small mb-0">Decimal precision for volumes, prices, and optimistic concurrency protection.</p>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card h-100 border-0 shadow-sm border-start border-4 border-primary">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-bold text-uppercase">Roles & Permissions</span>
+                <span class="badge bg-primary-subtle text-primary">Identity RBAC</span>
+            </div>
+            <h3 class="fw-bold mb-1 text-dark">4 Core Roles</h3>
+            <p class="text-muted small mb-0">Admin, Manager, Cashier, and Inventory Clerk with fine-grained policies.</p>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card h-100 border-0 shadow-sm border-start border-4 border-warning">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-bold text-uppercase">Inventory Protection</span>
+                <span class="badge bg-warning-subtle text-dark">Optimistic Lock</span>
+            </div>
+            <h3 class="fw-bold mb-1 text-dark">Double-Entry Ledger</h3>
+            <p class="text-muted small mb-0">Mathematical balance between current stock and the full movement history.</p>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card h-100 border-0 shadow-sm border-start border-4 border-info">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-bold text-uppercase">Bouquet Design</span>
+                <span class="badge bg-info-subtle text-info">Dynamic BOM</span>
+            </div>
+            <h3 class="fw-bold mb-1 text-dark">Component Deduction</h3>
+            <p class="text-muted small mb-0">Instant flower & packaging breakdown with waste percentage costing per bouquet.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Main System Modules Fast Navigation Grid -->
 <div class="row g-4 mb-4">
-    <div class="col-md-3">
-        <div class="card h-100 shadow-sm border-0">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="text-muted small text-uppercase fw-semibold">Database Engine</span>
-                    <span class="badge bg-success-subtle text-success">Active</span>
+    <!-- POS & Sales -->
+    <div class="col-md-6 col-xl-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="stat-icon-wrapper bg-warning-subtle text-warning">
+                        <i class="bi bi-cart3 fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Point of Sale (POS)</h5>
+                        <small class="text-muted">Sales transactions & invoicing</small>
+                    </div>
                 </div>
-                <h4 class="fw-bold mb-1">SQL Server</h4>
-                <p class="text-muted small mb-0">EF Core with explicit decimal precisions & concurrency tokens.</p>
+                <p class="text-muted small mb-3">Touch-friendly cashier interface with barcode scanner support, cash calculator, and real-time bouquet recipe explosion.</p>
+                <div class="d-flex gap-2">
+                    <a asp-controller="Pos" asp-action="Index" class="btn btn-warning btn-sm fw-bold flex-fill">
+                        Open Cashier <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                    <a asp-controller="Sales" asp-action="Index" class="btn btn-outline-secondary btn-sm">Invoices</a>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card h-100 shadow-sm border-0">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="text-muted small text-uppercase fw-semibold">Security & Roles</span>
-                    <span class="badge bg-primary-subtle text-primary">Configured</span>
-                </div>
-                <h4 class="fw-bold mb-1">4 Roles</h4>
-                <p class="text-muted small mb-0">Admin, Manager, Cashier, and Inventory Clerk with fine-grained policies.</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card h-100 shadow-sm border-0">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="text-muted small text-uppercase fw-semibold">Initial Seed</span>
-                    <span class="badge bg-info-subtle text-info">Ready</span>
-                </div>
-                <h4 class="fw-bold mb-1">5 Units & 5 Cats</h4>
-                <p class="text-muted small mb-0">Stems, Bunches, Vases, and 2 default warehouses configured.</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card h-100 shadow-sm border-0">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="text-muted small text-uppercase fw-semibold">Inventory Protection</span>
-                    <span class="badge bg-warning-subtle text-warning">Guarded</span>
-                </div>
-                <h4 class="fw-bold mb-1">Optimistic Concurrency</h4>
-                <p class="text-muted small mb-0">Prevents overselling under concurrent checkouts using rowversion tokens.</p>
-            </div>
-        </div>
-    </div>
-</div>
 
-<div class="row g-4">
-    <div class="col-lg-6">
-        <div class="card shadow-sm border-0 h-100">
-            <div class="card-header bg-white py-3">
-                <h5 class="mb-0 fw-bold">Active Roles & Authorization Policies</h5>
-            </div>
-            <div class="card-body">
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                        <div>
-                            <strong>Admin</strong>
-                            <div class="text-muted small">Full system access, user management, and configuration.</div>
-                        </div>
-                        <span class="badge bg-dark">System Administrator</span>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                        <div>
-                            <strong>Manager</strong>
-                            <div class="text-muted small">Catalog editing, pricing, reports, stocktaking approval, and returns.</div>
-                        </div>
-                        <span class="badge bg-primary">Store Management</span>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                        <div>
-                            <strong>Cashier</strong>
-                            <div class="text-muted small">POS checkout, invoice creation, and payment collection.</div>
-                        </div>
-                        <span class="badge bg-success">Sales Terminal</span>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                        <div>
-                            <strong>Inventory Clerk</strong>
-                            <div class="text-muted small">Stock receiving, physical count entry, and warehouse transfers.</div>
-                        </div>
-                        <span class="badge bg-info">Warehouse Operations</span>
-                    </li>
-                </ul>
+    <!-- Floral Catalog & Recipes -->
+    <div class="col-md-6 col-xl-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="stat-icon-wrapper bg-danger-subtle text-danger">
+                        <i class="bi bi-palette fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Bouquets & Catalog</h5>
+                        <small class="text-muted">Flowers & floral arrangements</small>
+                    </div>
+                </div>
+                <p class="text-muted small mb-3">Manage natural flowers, vases, satin ribbons, and define waste ratios, labor costs, and packaging fees per arrangement.</p>
+                <div class="d-flex gap-2">
+                    <a asp-controller="Bouquets" asp-action="Index" class="btn btn-danger btn-sm fw-bold flex-fill">
+                        Bouquet Recipes <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                    <a asp-controller="Products" asp-action="Index" class="btn btn-outline-secondary btn-sm">Products</a>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-lg-6">
-        <div class="card shadow-sm border-0 h-100">
-            <div class="card-header bg-white py-3">
-                <h5 class="mb-0 fw-bold">Pre-Configured Seed Warehouses & Units</h5>
+
+    <!-- Inventory & Warehouses -->
+    <div class="col-md-6 col-xl-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="stat-icon-wrapper bg-success-subtle text-success">
+                        <i class="bi bi-box-seam fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Warehouses & Inventory</h5>
+                        <small class="text-muted">Cold storage & stock control</small>
+                    </div>
+                </div>
+                <p class="text-muted small mb-3">Track flower stock between showroom and cold room (4°C), transfer between warehouses, and conduct periodic physical counts.</p>
+                <div class="d-flex gap-2">
+                    <a asp-controller="Inventory" asp-action="Index" class="btn btn-success btn-sm fw-bold flex-fill">
+                        Stock Balances <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                    <a asp-controller="Stocktaking" asp-action="Index" class="btn btn-outline-secondary btn-sm">Count</a>
+                </div>
             </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Warehouse Code</th>
-                                <th>Name</th>
-                                <th>Type</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><span class="badge bg-secondary">MAIN</span></td>
-                                <td>Main Store Floor</td>
-                                <td>Default Retail Display</td>
-                                <td><span class="badge bg-success">Active</span></td>
-                            </tr>
-                            <tr>
-                                <td><span class="badge bg-secondary">COLD-ROOM</span></td>
-                                <td>Cold Storage Facility</td>
-                                <td>Temperature-Controlled (4°C)</td>
-                                <td><span class="badge bg-success">Active</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
+        </div>
+    </div>
+
+    <!-- Procurement & Suppliers -->
+    <div class="col-md-6 col-xl-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="stat-icon-wrapper bg-primary-subtle text-primary">
+                        <i class="bi bi-truck fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Purchasing & Suppliers</h5>
+                        <small class="text-muted">Flower sourcing & procurement</small>
+                    </div>
+                </div>
+                <p class="text-muted small mb-3">Purchase invoices, WAC cost updates, purchase return tracking, and full supplier balance management.</p>
+                <div class="d-flex gap-2">
+                    <a asp-controller="Purchases" asp-action="Index" class="btn btn-primary btn-sm fw-bold flex-fill">
+                        Purchase Invoices <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                    <a asp-controller="Suppliers" asp-action="Index" class="btn btn-outline-secondary btn-sm">Suppliers</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics & Profit Reports -->
+    <div class="col-md-6 col-xl-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="stat-icon-wrapper bg-info-subtle text-info">
+                        <i class="bi bi-graph-up-arrow fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Reports & Profit Margins</h5>
+                        <small class="text-muted">Analytics & accounting</small>
+                    </div>
+                </div>
+                <p class="text-muted small mb-3">Net sales reports, gross profit, bouquet component consumption, inventory valuation, and customer & supplier balances.</p>
+                <div class="d-flex gap-2">
+                    <a asp-controller="Reports" asp-action="Index" class="btn btn-info btn-sm text-white fw-bold flex-fill">
+                        View Reports <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                    <a asp-controller="Reports" asp-action="Sales" class="btn btn-outline-secondary btn-sm">Sales</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Warehouses & Cold Rooms -->
+    <div class="col-md-6 col-xl-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="stat-icon-wrapper bg-secondary-subtle text-secondary">
+                        <i class="bi bi-buildings fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Warehouse Locations</h5>
+                        <small class="text-muted">Location configuration</small>
+                    </div>
+                </div>
+                <p class="text-muted small mb-3">Configure showrooms and cold-storage facilities with controlled temperatures to preserve flower freshness and extend shelf life.</p>
+                <div class="d-flex gap-2">
+                    <a asp-controller="Warehouses" asp-action="Index" class="btn btn-secondary btn-sm fw-bold flex-fill">
+                        Manage Warehouses <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
                 </div>
             </div>
         </div>
